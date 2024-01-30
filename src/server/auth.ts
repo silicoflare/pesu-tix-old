@@ -48,10 +48,8 @@ export const authOptions: NextAuthOptions = {
   },
   adapter: PrismaAdapter(db),
   providers: [
-    DiscordProvider({
-      clientId: env.DISCORD_CLIENT_ID,
-      clientSecret: env.DISCORD_CLIENT_SECRET,
-    }),
+    // Implement custom "Credentials" provider based off https://github.com/HackerSpace-PESU/pesu-auth
+   
     /**
      * ...add more providers here.
      *

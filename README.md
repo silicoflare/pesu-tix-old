@@ -31,8 +31,16 @@ pnpm install
 
 #### 3. Set up sqlite DB
 
+- Create sqlite DB file
+
 ```bash
 touch prisma/db.sqlite
+```
+
+- Sync Prisma schema to SQLite DB
+
+```bash
+pnpm prisma db push
 ```
 
 #### 4. Run the app

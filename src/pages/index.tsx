@@ -44,9 +44,9 @@ export default function Home() {
             </Link>
           </div>
           <div className="flex flex-col items-center gap-2">
-            <p className="text-2xl text-white">
-              {hello.data ? hello.data.greeting : "Loading tRPC query..."}
-            </p>
+            {hello.isLoading && <p className="text-2xl text-white">Loading tRPC query...</p>}
+            {hello.error && <p className="text-2xl text-red-600">{hello.error.message}</p>}
+            {hello.data && <p className="text-2xl text-white">{hello.data.greeting}</p>}
             <AuthShowcase />
           </div>
         </div>

@@ -1,10 +1,12 @@
 import { signIn } from "next-auth/react";
 import { FormEvent, FunctionComponent, useState } from "react";
+import { Icons } from "~/components/Icons";
 
 const SignInPage: FunctionComponent = () => {
   const [username, setUsername] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [error, setError] = useState<null | string>(null);
+  const [loading, setLoading] = useState<boolean>(false);
 
   /**
    * Validate the inputs
@@ -18,16 +20,32 @@ const SignInPage: FunctionComponent = () => {
     return true;
   }
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     const isValid = validateInputs(username, password);
 
     if (isValid) {
-      console.log("Form is valid");
-      // Sign in with credentials
-    } else {
-      console.error("Form is invalid");
+      setLoading(true);
 
+      // Sign in with credentials
+      const res = await signIn("credentials", {
+        username,
+        password,
+        redirect: false,
+      });
+
+      setLoading(false);
+
+      // Testing this out for now
+      console.log(res);
+      if (res!.ok) {
+        console.log("Sign in successful");
+        // Redirect to the home/dashboard page
+      } else {
+        if (res?.status === 401) setError("Invalid username or password");
+        setError("An error occurred. Please try again.");
+      }
+    } else {
       setError("Please fill in all the fields");
     }
   };
@@ -75,10 +93,11 @@ const SignInPage: FunctionComponent = () => {
 
           <div className="flex items-center justify-center">
             <button
-              className="focus:shadow-outline w-1/3 rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700 focus:outline-none"
+              className="focus:shadow-outline flex w-1/3 items-center justify-center rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700 focus:outline-none disabled:cursor-not-allowed"
               type="submit"
+              disabled={loading}
             >
-              Continue
+              {loading ? <Icons.circularProgress /> : "Continue"}
             </button>
           </div>
         </form>

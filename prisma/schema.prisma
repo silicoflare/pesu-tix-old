@@ -54,14 +54,27 @@ model Session {
 }
 
 model User {
-    id            String    @id @default(cuid())
-    name          String?
-    email         String?   @unique
-    emailVerified DateTime?
-    image         String?
-    accounts      Account[]
-    sessions      Session[]
-    posts         Post[]
+    id                String    @id @default(cuid())
+    name              String?
+    email             String?   @unique
+    emailVerified     DateTime?
+    image             String?
+    prn               String?
+    srn               String?
+    program           String?
+    branch_short_code String?
+    semester          String?
+    section           String?
+    campus_code       Int?
+    campus            String?
+    class             String?
+    cycle             String?
+    department        String?
+    branch            String?
+    institute_name    String?
+    accounts          Account[]
+    sessions          Session[]
+    posts             Post[]
 }
 
 model VerificationToken {

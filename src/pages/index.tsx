@@ -44,10 +44,23 @@ export default function Home() {
             </Link>
           </div>
           <div className="flex flex-col items-center gap-2">
-            {hello.isLoading && <p className="text-2xl text-white">Loading tRPC query...</p>}
-            {hello.error && <p className="text-2xl text-red-600">{hello.error.message}</p>}
-            {hello.data && <p className="text-2xl text-white">{hello.data.greeting}</p>}
-            <AuthShowcase />
+            {hello.isLoading && (
+              <p className="text-2xl text-white">Loading tRPC query...</p>
+            )}
+            {hello.error && (
+              <p className="text-2xl text-red-600">{hello.error.message}</p>
+            )}
+            {hello.data && (
+              <p className="text-2xl text-white">{hello.data.greeting}</p>
+            )}
+
+            {/* Sign in button that leads to signin page */}
+            <Link
+              href="/signin"
+              className="rounded-full bg-white/10 px-10 py-3 font-semibold text-white no-underline transition hover:bg-white/20"
+            >
+              Sign in
+            </Link>
           </div>
         </div>
       </main>
@@ -60,7 +73,7 @@ function AuthShowcase() {
 
   const { data: secretMessage } = api.post.getSecretMessage.useQuery(
     undefined, // no input
-    { enabled: sessionData?.user !== undefined }
+    { enabled: sessionData?.user !== undefined },
   );
 
   return (

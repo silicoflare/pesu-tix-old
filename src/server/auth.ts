@@ -54,25 +54,31 @@ export const authOptions: NextAuthOptions = {
     // Custom "Credentials" provider based off https://github.com/HackerSpace-PESU/pesu-auth
     CredentialsProvider({
       // The name to display on the sign in form (e.g. 'Sign in with...')
-      name: 'PESU Auth',
+      name: "PESU Auth",
       // The credentials is used to generate a suitable form on the sign in page.
       // You can specify whatever fields you are expecting to be submitted.
       credentials: {
-        username: { label: "Username", type: "text", placeholder: "SRN or PRN" },
+        username: {
+          label: "Username",
+          type: "text",
+          placeholder: "SRN or PRN",
+        },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials, req) {
-        const params = {...credentials, profile: true};
+        const params = { ...credentials, profile: true };
         const res = await fetch("https://pesu-auth.onrender.com/authenticate", {
-          method: 'POST',
+          method: "POST",
           body: JSON.stringify(params),
-          headers: { "Content-Type": "application/json" }
-        })
-        const data = await res.json()
-        
+          headers: { "Content-Type": "application/json" },
+        });
+        const data = await res.json();
+
         // If no error and we have user data
         if (res.ok && data.status) {
           const classAndSection = data.know_your_class_and_section;
+          // TODO: Fix the type scream caused by id default field not supplied
+          // TODO: Consider if user exists in the database or not
           const user = {
             name: data.profile.name,
             prn: data.profile.prn,
@@ -94,8 +100,8 @@ export const authOptions: NextAuthOptions = {
         }
 
         // if user data could not be retrieved
-        return null
-      }
+        return null;
+      },
     }),
   ],
   pages: {

@@ -77,9 +77,10 @@ export const authOptions: NextAuthOptions = {
         // If no error and we have user data
         if (res.ok && data.status) {
           const classAndSection = data.know_your_class_and_section;
-          // TODO: Fix the type scream caused by id default field not supplied
           // TODO: Consider if user exists in the database or not
+          // in order to fix the type scream caused by id default field not supplied
           const user = {
+            id: "foobarbaz", // TODO: Remove this later, testing for now to avoid TS scream
             name: data.profile.name,
             prn: data.profile.prn,
             srn: data.profile.srn,

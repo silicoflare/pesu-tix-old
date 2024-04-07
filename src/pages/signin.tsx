@@ -107,6 +107,3 @@ const SignInPage: FunctionComponent = () => {
 };
 
 export default SignInPage;
-function validateForm(username: string, password: string) {
-  throw new Error("Function not implemented.");
-}

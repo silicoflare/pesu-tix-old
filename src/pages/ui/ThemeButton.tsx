@@ -2,30 +2,30 @@ import { useState, useEffect } from "react";
 import { Button } from "~/components/ui/button";
 import { MoonIcon, SunIcon } from '@radix-ui/react-icons';
 
-export default function ThemeButton()    {
+export default function ThemeButton() {
     const [isDark, setIsDark] = useState(false);
 
     useEffect(() => {
         let theme = localStorage.getItem("tix-dark");
         const root = document.documentElement;
-        if (theme)  {
+        if (theme) {
             setIsDark(theme.toLowerCase() === "true");
-            if (theme.toLowerCase() === "true") 
-                root.classList.remove("dark");
-            else
+            if (theme.toLowerCase() === "true")
                 root.classList.add("dark");
+            else
+                root.classList.remove("dark");
         }
-        else    {
+        else {
             setIsDark(false);
             root.classList.remove("dark");
         }
     }, []);
 
-    function changeMode()   {
+    function changeMode() {
         const root = document.documentElement;
         setIsDark(old => {
             const newDark = !old;
-            if (newDark) 
+            if (newDark)
                 root.classList.add("dark");
             else
                 root.classList.remove("dark");
@@ -38,7 +38,7 @@ export default function ThemeButton()    {
 
     return (
         <Button className="p-2 w-16 h-16 rounded-full absolute bottom-5 right-5 shadow-md text-primary-foreground bg-primary" onClick={changeMode}>
-            { isDark ? <MoonIcon /> : <SunIcon /> }
+            {isDark ? <MoonIcon /> : <SunIcon />}
         </Button>
     )
 }

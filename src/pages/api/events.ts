@@ -5,15 +5,18 @@ export default function handler(req: NextApiRequest, res: NextApiResponse)  {
         events: [
             {
                 name: "HashCode",
-                type: "hackathon"
+                type: "hackathon",
+                date: new Date('09/11/2002').toISOString().slice(0, 10)
             },
             {
                 name: "MarkdownMania",
-                type: "workshop"
+                type: "workshop",
+                date: new Date('09/11/2002').toISOString().slice(0, 10)
             },
             {
                 name: "AI in Engineering",
-                type: "seminar"
+                type: "seminar",
+                date: new Date('09/11/2002').toISOString().slice(0, 10)
             }
         ]
     });

@@ -37,7 +37,7 @@ export default function ThemeButton()    {
     }
 
     return (
-        <Button className="p-2 w-16 h-16 rounded-full absolute bottom-5 right-5 shadow-md" onClick={changeMode}>
+        <Button className="p-2 w-16 h-16 rounded-full absolute bottom-5 right-5 shadow-md text-primary-foreground bg-primary" onClick={changeMode}>
             { isDark ? <MoonIcon /> : <SunIcon /> }
         </Button>
     )

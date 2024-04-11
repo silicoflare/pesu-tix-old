@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { Button } from "~/components/ui/button";
 import { SunIcon, MoonIcon } from 'lucide-react';
 
 export default function ThemeButton() {
@@ -37,7 +36,7 @@ export default function ThemeButton() {
     }
 
     return (
-        <div onClick={changeMode} className="ml-7 p-0 flex flex-col items-center justify-center">
+        <div onClick={changeMode} className="mr-7 p-0 flex flex-col items-center justify-center">
             {isDark ? <MoonIcon className="w-7 h-7" /> : <SunIcon className="w-7 h-7" />}
         </div>
     )

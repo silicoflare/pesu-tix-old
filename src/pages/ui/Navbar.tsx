@@ -1,24 +1,34 @@
-import { createAvatar } from '@dicebear/core';
-import { adventurerNeutral } from '@dicebear/collection';
 import ThemeButton from './ThemeButton';
 import { TicketIcon } from 'lucide-react';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuItem, DropdownMenuSeparator } from '~/components/ui/dropdown-menu';
+import { Avatar, AvatarImage } from '~/components/ui/avatar';
 
 export default function Navbar()    {
     const account = 'HackerSpace';
-    const avatar = createAvatar(adventurerNeutral, {
-        seed: account
-    }).toString();
 
     return (
-        <div className="w-full flex flex-row items-center justify-between px-7 py-4 bg-background text-primary border-b border-border">
+        <div className="w-full flex flex-row items-center justify-between px-7 py-4 bg-background text-primary">
             <h1 className="font-semibold text-2xl cursor-pointer flex flex-row gap-x-3 items-center">
                 <TicketIcon className='-rotate-45' />
-                PESU-tix
             </h1>
             <span className="flex flex-row items-center justify-end cursor-pointer gap-x-3">
-                <span className="w-10 h- border rounded-full overflow-clip" dangerouslySetInnerHTML={{ __html: avatar }}></span>
-                <span className="text-lg">{ account }</span>
                 <ThemeButton />
+                <DropdownMenu>
+                    <DropdownMenuTrigger className='outline-none'>
+                        <Avatar>
+                            <AvatarImage src={`https://api.dicebear.com/8.x/adventurer-neutral/svg?seed=${account}`}>
+                            </AvatarImage>
+                        </Avatar>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className='mr-5 mt-2'>
+                        <DropdownMenuLabel>{account}</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem>Foo</DropdownMenuItem>
+                        <DropdownMenuItem>Bar</DropdownMenuItem>
+                        <DropdownMenuItem>Baz</DropdownMenuItem>
+                        <DropdownMenuItem>Boo</DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </span>
         </div>
     )

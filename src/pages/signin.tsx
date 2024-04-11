@@ -40,7 +40,7 @@ const SignInPage: FunctionComponent = () => {
       console.log(res);
       if (res!.ok) {
         console.log("Sign in successful");
-        // Redirect to the home/dashboard page
+        // Redirect to the dashboard page
       } else {
         if (res?.status === 401) setError("Invalid username or password");
         setError("An error occurred. Please try again.");

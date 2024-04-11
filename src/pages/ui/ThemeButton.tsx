@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "~/components/ui/button";
-import { MoonIcon, SunIcon } from '@radix-ui/react-icons';
+import { SunIcon, MoonIcon } from 'lucide-react';
 
 export default function ThemeButton() {
     const [isDark, setIsDark] = useState(false);
@@ -37,8 +37,8 @@ export default function ThemeButton() {
     }
 
     return (
-        <Button className="p-2 w-16 h-16 rounded-full absolute bottom-5 right-5 shadow-md text-primary-foreground bg-primary" onClick={changeMode}>
-            {isDark ? <MoonIcon /> : <SunIcon />}
-        </Button>
+        <div onClick={changeMode} className="ml-7 p-0 flex flex-col items-center justify-center">
+            {isDark ? <MoonIcon className="w-7 h-7" /> : <SunIcon className="w-7 h-7" />}
+        </div>
     )
 }

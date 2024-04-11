@@ -22,7 +22,6 @@ export default function Dashboard() {
 
     return (
         <div className={`flex flex-col items-center w-screen h-screen bg-background text-primary ${inter}`}>
-            <ThemeButton />
             <Navbar />
             <div className="w-full flex flex-col items-center mt-5">
                 <h1 className="text-3xl font-semibold text-primary my-5">Your Events</h1>

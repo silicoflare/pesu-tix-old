@@ -1,23 +1,13 @@
 import { useState, useEffect } from "react";
 import { SunIcon, MoonIcon } from 'lucide-react';
+import { useAtom } from "jotai";
+import { dark } from "~/atoms";
 
 export default function ThemeButton() {
-    const [isDark, setIsDark] = useState(false);
+    const [isDark, setIsDark] = useAtom(dark);
 
     useEffect(() => {
-        let theme = localStorage.getItem("tix-dark");
-        const root = document.documentElement;
-        if (theme) {
-            setIsDark(theme.toLowerCase() === "true");
-            if (theme.toLowerCase() === "true")
-                root.classList.add("dark");
-            else
-                root.classList.remove("dark");
-        }
-        else {
-            setIsDark(false);
-            root.classList.remove("dark");
-        }
+        changeMode();
     }, []);
 
     function changeMode() {
@@ -28,9 +18,6 @@ export default function ThemeButton() {
                 root.classList.add("dark");
             else
                 root.classList.remove("dark");
-
-            localStorage.setItem("tix-dark", newDark ? "true" : "false");
-
             return newDark;
         });
     }

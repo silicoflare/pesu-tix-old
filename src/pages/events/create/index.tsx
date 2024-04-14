@@ -26,7 +26,7 @@ export default function CreateEvent() {
         resolver: zodResolver(formSchema),
         defaultValues: {
             name: "",
-            description: "Markdown is *supported*",
+            description: "Formatting is <b><i>supported</i></b>!",
             type: "hackathon",
         }
     })

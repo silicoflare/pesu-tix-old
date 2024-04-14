@@ -2,9 +2,16 @@ import ThemeButton from './ThemeButton';
 import { TicketIcon } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuItem, DropdownMenuSeparator } from '~/components/ui/dropdown-menu';
 import { Avatar, AvatarImage } from '~/components/ui/avatar';
+import { useEffect, useState } from 'react';
 
 export default function Navbar()    {
-    const account = 'HackerSpace';
+    const [ user, setUser ] = useState("");
+
+    useEffect(() => {
+        fetch(`${process.env.NEXT_PUBLIC_URL}/api/user`)
+            .then(data => data.json())
+            .then(json => setUser(json.username));
+    })
 
     return (
         <div className="w-full flex flex-row items-center justify-between px-7 py-4 bg-background text-primary">
@@ -16,12 +23,12 @@ export default function Navbar()    {
                 <DropdownMenu>
                     <DropdownMenuTrigger className='outline-none'>
                         <Avatar>
-                            <AvatarImage src={`https://api.dicebear.com/8.x/adventurer-neutral/svg?seed=${account}`}>
+                            <AvatarImage src={`https://api.dicebear.com/8.x/adventurer-neutral/svg?seed=${user}`}>
                             </AvatarImage>
                         </Avatar>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className='mr-5 mt-2'>
-                        <DropdownMenuLabel>{account}</DropdownMenuLabel>
+                        <DropdownMenuLabel>{user}</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem>Foo</DropdownMenuItem>
                         <DropdownMenuItem>Bar</DropdownMenuItem>

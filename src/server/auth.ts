@@ -6,9 +6,12 @@ import {
   type NextAuthOptions,
 } from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
+import CredentialsProvider from "next-auth/providers/credentials";
 
 import { env } from "~/env.mjs";
 import { db } from "~/server/db";
+import { profile } from "console";
+import { User } from "@prisma/client";
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -48,18 +51,62 @@ export const authOptions: NextAuthOptions = {
   },
   adapter: PrismaAdapter(db),
   providers: [
-    // Implement custom "Credentials" provider based off https://github.com/HackerSpace-PESU/pesu-auth
-   
-    /**
-     * ...add more providers here.
-     *
-     * Most other providers require a bit more work than the Discord provider. For example, the
-     * GitHub provider requires you to add the `refresh_token_expires_in` field to the Account
-     * model. Refer to the NextAuth.js docs for the provider you want to use. Example:
-     *
-     * @see https://next-auth.js.org/providers/github
-     */
+    // Custom "Credentials" provider based off https://github.com/HackerSpace-PESU/pesu-auth
+    CredentialsProvider({
+      // The name to display on the sign in form (e.g. 'Sign in with...')
+      name: "PESU Auth",
+      // The credentials is used to generate a suitable form on the sign in page.
+      // You can specify whatever fields you are expecting to be submitted.
+      credentials: {
+        username: {
+          label: "Username",
+          type: "text",
+          placeholder: "SRN or PRN",
+        },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials, req) {
+        const params = { ...credentials, profile: true };
+        const res = await fetch("https://pesu-auth.onrender.com/authenticate", {
+          method: "POST",
+          body: JSON.stringify(params),
+          headers: { "Content-Type": "application/json" },
+        });
+        const data = await res.json();
+
+        // If no error and we have user data
+        if (res.ok && data.status) {
+          const classAndSection = data.know_your_class_and_section;
+          const user = {
+            id: crypto.randomUUID(),
+            name: data.profile.name,
+            prn: data.profile.prn,
+            srn: data.profile.srn,
+            program: data.profile.program,
+            branch_short_code: data.profile.branch_short_code,
+            branch: data.profile.branch,
+            semester: data.profile.semester,
+            section: data.profile.section,
+            campus_code: data.profile.campus_code,
+            campus: data.profile.campus,
+            class: classAndSection.class,
+            cycle: classAndSection.cycle,
+            department: classAndSection.department,
+            institute_name: classAndSection.institute_name,
+          };
+
+          return user;
+        }
+
+        // if user data could not be retrieved
+        return null;
+      },
+    }),
   ],
+  pages: {
+    signIn: "/signin",
+  },
+  secret: env.NEXTAUTH_SECRET,
 };
 
 /**

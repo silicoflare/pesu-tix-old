@@ -4,14 +4,14 @@ import {
   getServerSession,
   type DefaultSession,
   type NextAuthOptions,
+  DefaultUser,
 } from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
 import CredentialsProvider from "next-auth/providers/credentials";
 
 import { env } from "~/env.mjs";
 import { db } from "~/server/db";
-import { profile } from "console";
-import { User } from "@prisma/client";
+import { Role, StudentInfo, ClubInfo, AdminInfo } from "~/types";
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -20,19 +20,30 @@ import { User } from "@prisma/client";
  * @see https://next-auth.js.org/getting-started/typescript#module-augmentation
  */
 declare module "next-auth" {
-  interface Session extends DefaultSession {
-    user: DefaultSession["user"] & {
-      id: string;
-      // ...other properties
-      // role: UserRole;
-    };
+  export interface Session extends DefaultSession {
+    user: User;
   }
 
-  // interface User {
-  //   // ...other properties
-  //   // role: UserRole;
-  // }
+
+  export interface User extends DefaultUser {
+    role: Role;
+    id: string;
+    studentInfo?: StudentInfo | undefined;
+    clubInfo?: ClubInfo | undefined;
+    adminInfo?: AdminInfo | undefined;
+  }
 }
+
+declare module "next-auth/jwt" {
+  export interface JWT {
+    role: Role;
+    id: string;
+    studentInfo?: StudentInfo | undefined;
+    clubInfo?: ClubInfo | undefined;
+    adminInfo?: AdminInfo | undefined;
+  }
+}
+
 
 /**
  * Options for NextAuth.js used to configure adapters, providers, callbacks, etc.
@@ -40,28 +51,65 @@ declare module "next-auth" {
  * @see https://next-auth.js.org/configuration/options
  */
 export const authOptions: NextAuthOptions = {
+  session: {
+    strategy: "jwt",
+  },
   callbacks: {
-    session: ({ session, user }) => ({
+    jwt: ({ token, user }) => {
+      if (user) {
+        switch(user.role) {
+          case "student":
+            token.role = user.role;
+            token.id = user.id;
+            token.studentInfo = user.studentInfo;
+            break;
+          case "admin":
+            token.role = user.role;
+            token.id = user.id;
+            token.adminInfo = user.adminInfo;
+            break;
+          case "club":
+            token.role = user.role;
+            token.id = user.id;
+            token.clubInfo = user.clubInfo;
+            break;
+        }
+      }
+      return token;
+    },
+    session: ({ session, token }) => ({
       ...session,
       user: {
         ...session.user,
-        id: user.id,
+        role: token.role,
+        id: token.id,
+        studentInfo: token?.studentInfo,
+        clubInfo: token?.clubInfo,
+        adminInfo: token?.adminInfo,
       },
     }),
+    async redirect(props) {
+      const { baseUrl } = props;
+      let { url } = props;
+      const cleanedUpUrl = new URL(url);
+      cleanedUpUrl.searchParams.delete("callbackUrl");
+      url = cleanedUpUrl.toString();
+      if (url.startsWith("/"))
+        return `${baseUrl}${url}`
+      else if (new URL(url).origin === baseUrl) 
+        return url
+      return baseUrl
+    }
   },
   adapter: PrismaAdapter(db),
   providers: [
-    // Custom "Credentials" provider based off https://github.com/HackerSpace-PESU/pesu-auth
     CredentialsProvider({
-      // The name to display on the sign in form (e.g. 'Sign in with...')
       name: "PESU Auth",
-      // The credentials is used to generate a suitable form on the sign in page.
-      // You can specify whatever fields you are expecting to be submitted.
+      id: "pesu-auth",
       credentials: {
         username: {
           label: "Username",
           type: "text",
-          placeholder: "SRN or PRN",
         },
         password: { label: "Password", type: "password" },
       },
@@ -74,37 +122,76 @@ export const authOptions: NextAuthOptions = {
         });
         const data = await res.json();
 
-        // If no error and we have user data
-        if (res.ok && data.status) {
+        if (data) {
           const classAndSection = data.know_your_class_and_section;
           const user = {
-            id: crypto.randomUUID(),
-            name: data.profile.name,
-            prn: data.profile.prn,
-            srn: data.profile.srn,
-            program: data.profile.program,
-            branch_short_code: data.profile.branch_short_code,
-            branch: data.profile.branch,
-            semester: data.profile.semester,
-            section: data.profile.section,
-            campus_code: data.profile.campus_code,
-            campus: data.profile.campus,
-            class: classAndSection.class,
-            cycle: classAndSection.cycle,
-            department: classAndSection.department,
-            institute_name: classAndSection.institute_name,
+            role: "student" as "student",
+            id: data.profile.prn,
+            studentInfo: {
+              name: data.profile.name,
+              prn: data.profile.prn,
+              srn: data.profile.srn,
+              email: data.profile.email,
+              phone: data.profile.phone,
+              program: data.profile.program,
+              branch_short_code: data.profile.branch_short_code,
+              branch: data.profile.branch,
+              semester: data.profile.semester,
+              section: data.profile.section,
+              campus_code: data.profile.campus_code,
+              campus: data.profile.campus,
+              class: classAndSection.class,
+              cycle: classAndSection.cycle,
+              department: classAndSection.department,
+              institute_name: classAndSection.institute_name,
+            }
           };
-
           return user;
         }
-
         // if user data could not be retrieved
         return null;
       },
     }),
+    CredentialsProvider({
+      name: "Tix Auth",
+      id: "tix-auth",
+      credentials: {
+        username: { label: "Username", type: "text" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials, req) {
+        let user = null;
+        if (credentials?.username == "pragma" && credentials?.password == "pragma") {
+          user = {
+            role: "club" as "club",
+            id: "pragma",
+            clubInfo: {
+              username: "pragma",
+              name: "pragma",
+              campus: "RR" as "RR"
+            }
+          };
+        }
+        else if (credentials?.username == "admin" && credentials?.password == "admin") {
+          user = {
+            role: "admin" as "admin",
+            id: "admin",
+            adminInfo: {
+              username: "admin",
+              name: "Admin"
+            }
+          };
+        }
+        else  {
+          user = null;
+        }
+        console.log(user);
+        return user;
+      },
+    })
   ],
   pages: {
-    signIn: "/signin",
+    signIn: "/login",
   },
   secret: env.NEXTAUTH_SECRET,
 };

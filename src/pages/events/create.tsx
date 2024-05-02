@@ -13,13 +13,30 @@ import { CalendarIcon, ChevronLeft } from "lucide-react";
 import { Calendar } from "~/components/ui/calendar";
 import { useForm } from "react-hook-form";
 import TipTap from "~/pages/ui/TipTap";
+import Link from "next/link";
+import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "~/components/ui/input-otp";
+import { Event } from "~/types";
+import moment from "moment";
+import { useSession } from "next-auth/react";
+import { api } from "~/utils/api";
+import { useToast } from "~/components/ui/use-toast";
+import { useRouter } from "next/router";
 
 export default function CreateEvent() {
+    const { data: session } = useSession();
+    const { toast } = useToast();
+    const router = useRouter();
+
+    const eventCreate = api.event.createEvent.useMutation();
+
     const formSchema = z.object({
         name: z.string(),
         description: z.string(),
         type: z.enum(["hackathon", "seminar", "workshop", "performance", "screening", "CTF", "talk", "treasure-hunt"] as const),
-        date: z.date(),
+        dateandtime: z.object({
+            date: z.date(),
+            time: z.string().array().length(2)
+        })
     });
 
     const form = useForm<z.infer<typeof formSchema>>({
@@ -28,11 +45,29 @@ export default function CreateEvent() {
             name: "",
             description: "Formatting is <b><i>supported</i></b>!",
             type: "hackathon",
+            dateandtime: {
+                date: new Date(),
+                time: moment(new Date()).toArray().slice(3, 5).map(x => x.toString().padStart(2, '0'))
+            }
         }
     })
 
     function formSubmit(values: z.infer<typeof formSchema>) {
-        console.log(values);
+        const event: Event = {
+            creatorID: session!.user.id,
+            name: values.name,
+            description: values.description,
+            type: values.type,
+            date: moment([...moment(values.dateandtime.date).toArray().slice(0,3), ...values.dateandtime.time]).toISOString()
+        };
+
+        const res = eventCreate.mutate({ event });
+
+        toast({
+            description: "Event created successfully!",
+            variant: "success"
+        });
+        router.push("/dashboard");
     }
 
     return (
@@ -42,8 +77,8 @@ export default function CreateEvent() {
             </Head>
             <div className={`flex flex-col items-center w-screen h-screen bg-background text-primary gap-y-5 ${inter}`}>
                 <Navbar />
-                <span className="w-1/3 items-start">
-                    <button className="text-xs flex items-center hover:underline"><ChevronLeft className="w-5 h-5" /> Back</button>
+                <span className="w-1/3 items-start mt-32">
+                    <Link className="text-sm flex items-center hover:underline" href="/dashboard"><ChevronLeft className="w-5 h-5" /> Back</Link>
                 </span>
                 <h1 className="w-1/3 text-3xl font-semibold text-left">Create Event</h1>
                 <div className="w-1/3 my-2 items-center border rounded-md p-7">
@@ -138,7 +173,7 @@ export default function CreateEvent() {
                         /><br /><br />
                         <FormField
                             control={form.control}
-                            name="date"
+                            name="dateandtime"
                             render={({ field }) => (
                                 <FormItem className="flex flex-col">
                                     <FormLabel>Event Date</FormLabel>
@@ -149,24 +184,38 @@ export default function CreateEvent() {
                                                     variant="popover"
                                                     className="bg-background">
                                                     {field.value ? (
-                                                        field.value.toLocaleDateString()
+                                                        moment([...moment(field.value.date).toArray().slice(0, 3), ...field.value.time]).format("LL \\at LT")
                                                     ) : (
-                                                        <span>Pick a date</span>
+                                                        <span>Pick a date and time</span>
                                                     )}
                                                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                                 </Button>
                                             </FormControl>
                                         </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
+                                        <PopoverContent className="w-auto p-2 flex flex-col items-center gap-y-4" align="start">
                                             <Calendar
                                                 mode="single"
-                                                selected={field.value}
-                                                onSelect={field.onChange}
+                                                selected={moment(field.value.date).toDate()}
+                                                onSelect={(value) => field.onChange({ time: field.value.time, date: value })}
                                                 disabled={(date) =>
                                                     date < new Date()
                                                 }
                                                 initialFocus
                                             />
+                                            <InputOTP maxLength={4} className="" value={field.value.time.join("")} onChange={value => {
+                                                const arr = value.split("");
+                                                field.onChange({ date: field.value.date, time: [arr.slice(0, 2).join(""), arr.slice(2, 4).join("")] })
+                                            }}>
+                                                <InputOTPGroup>
+                                                    <InputOTPSlot index={0} />
+                                                    <InputOTPSlot index={1} />
+                                                </InputOTPGroup>
+                                                <InputOTPSeparator><span className="font-semibold">:</span></InputOTPSeparator>
+                                                <InputOTPGroup>
+                                                    <InputOTPSlot index={2} />
+                                                    <InputOTPSlot index={3} />
+                                                </InputOTPGroup>
+                                            </InputOTP>
                                         </PopoverContent>
                                     </Popover>
                                     <FormMessage />
@@ -182,4 +231,8 @@ export default function CreateEvent() {
             </div>
         </>
     )
+}
+
+CreateEvent.auth = {
+    role: "club"
 }

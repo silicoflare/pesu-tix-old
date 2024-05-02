@@ -3,7 +3,7 @@ import { SunIcon, MoonIcon } from 'lucide-react';
 import { useAtom } from "jotai";
 import { dark } from "~/atoms";
 
-export default function ThemeButton() {
+export default function ThemeButton({ hidden } : { hidden?: boolean }) {
     const [isDark, setIsDark] = useAtom(dark);
 
     useEffect(() => {
@@ -23,7 +23,7 @@ export default function ThemeButton() {
     }
 
     return (
-        <div onClick={changeMode} className="mr-7 p-0 flex flex-col items-center justify-center">
+        <div onClick={changeMode} className="mr-7 p-0 flex flex-col items-center justify-center" style={{ visibility: hidden ? "hidden" : "visible" }}>
             {isDark ? <MoonIcon className="w-7 h-7" /> : <SunIcon className="w-7 h-7" />}
         </div>
     )

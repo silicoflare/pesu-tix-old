@@ -8,6 +8,10 @@
   @apply flex flex-col items-center w-screen min-h-screen h-full p-5 basic;
 }
 
+.window  {
+  @apply flex flex-col items-center w-screen min-h-screen h-full p-5 basic;
+}
+
 .basic  {
   @apply bg-background text-primary transition ease-in-out duration-200;
 }

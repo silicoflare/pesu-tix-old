@@ -7,13 +7,14 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { namify } from '~/tools';
+import { montserrat } from '~/fonts';
 
 export default function Navbar({ hidelogin = false } : { hidelogin?: boolean })    {
     const { data: session } = useSession();
     const router = useRouter();
 
     return (
-        <div className="w-full flex flex-row items-center justify-between px-7 py-7 basic fixed top-0 left-0 bg-transparent z-0">
+        <div className={`w-full flex flex-row items-center justify-between px-7 py-7 basic fixed top-0 left-0 bg-transparent z-10 ${montserrat}`}>
             <h1 className="font-semibold text-2xl cursor-pointer flex flex-row gap-x-3 items-center">
                 <Link href="/">
                     <TicketIcon className='-rotate-45' />
@@ -40,7 +41,7 @@ export default function Navbar({ hidelogin = false } : { hidelogin?: boolean }) 
                         </DropdownMenuContent>
                     </DropdownMenu>
                 ) : (
-                    <Button onClick={() => signIn()}>
+                    <Button onClick={() => router.push("/login")}>
                         Login
                     </Button>
                 ))}

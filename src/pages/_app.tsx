@@ -3,9 +3,11 @@ import { SessionProvider, useSession, signIn, signOut } from "next-auth/react";
 import { type AppType } from "next/app";
 import { ReactNode, useEffect } from 'react';
 
+
 import { api } from "~/utils/api";
 
 import "~/styles/globals.css";
+import "tippy.js/dist/tippy.css";
 import { Toaster } from "~/components/ui/toaster";
 
 const MyApp: AppType<{ session: Session | null }> = ({
@@ -27,25 +29,34 @@ const MyApp: AppType<{ session: Session | null }> = ({
 };
 
 
-function Auth({ role, children }: { role: string, children: ReactNode }) {
-    const { data: session, status } = useSession()
-    const isUser = session?.user
+interface AuthProps {
+    role: string[];
+    children: ReactNode;
+}
+
+function Auth({ role, children }: AuthProps) {
+    const { data: session, status } = useSession();
+    const isUser = session?.user;
+
     useEffect(() => {
-        if (status === "loading")
-            return
-        if (!isUser || session?.user.role !== role) {
+        if (status === "loading") {
+            return;
+        }
+
+        if (!isUser || !role.includes(session?.user.role ?? "")) {
             signIn();
         }
-    }, [isUser, status, session])
+    }, [isUser, status, session, role]);
 
-    if (isUser && session.user.role == role) {
-        return children
+    if (isUser && role.includes(session?.user.role ?? "")) {
+        return <>{children}</>;
     }
+
     return (
-        <div className="container">
+        <div className="window">
             Loading...
         </div>
-    )
+    );
 }
 
 

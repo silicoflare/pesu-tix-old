@@ -10,12 +10,16 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { LoaderCircle } from "lucide-react";
-import { inter } from "~/fonts";
+import { inter, montserrat } from "~/fonts";
+import { sha256 } from "js-sha256";
+import { useAtom } from "jotai";
+import { clubID } from "~/atoms";
 
 const SignInPage: FunctionComponent = () => {
     const [error, setError] = useState<null | string>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const { data: session } = useSession();
+    const [ _, setClubId ] = useAtom(clubID);
 
     const formSchema = z.object({
         username: z.string().min(1, { message: "Username cannot be empty" }),
@@ -54,7 +58,7 @@ const SignInPage: FunctionComponent = () => {
             }
         }
         else    {
-            res = await signIn("hsp-auth", {
+            res = await signIn("tix-auth", {
                 username: values.username,
                 password: values.password,
                 redirect: false,
@@ -66,7 +70,8 @@ const SignInPage: FunctionComponent = () => {
                     router.push('/admin');
                 }
                 else {
-                    router.push('/dashboard');
+                    setClubId(values.username);
+                    router.push('/events');
                 }
             } else {
                 if (res?.status === 401)    {
@@ -80,7 +85,7 @@ const SignInPage: FunctionComponent = () => {
     };
 
     return (
-        <div className={`container justify-center ${inter}`}>
+        <div className={`container justify-center ${montserrat}`}>
             <Navbar hidelogin />
             <Card>
                 <CardHeader>

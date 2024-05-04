@@ -20,18 +20,21 @@ import moment from "moment";
 import { useSession } from "next-auth/react";
 import { api } from "~/utils/api";
 import { useEffect, useState } from "react";
-import { useAtom } from "jotai";
-import { editEventID } from "~/atoms";
 import { useToast } from "~/components/ui/use-toast";
 import { useRouter } from "next/router";
 
-export default function CreateEvent() {
+export default function EditEvent() {
     const { data: session } = useSession();
     const router = useRouter();
-    const [editEventId] = useAtom(editEventID);
+    const { eventID } = router.query;
+    let ID: string = "";
+    if (router.isReady) {
+        ID = eventID as string;
+    }
+
     const eventEdit = api.event.editEvent.useMutation();
 
-    const { data: formData } = api.event.getEvent.useQuery({ id: editEventId ?? "" }, {
+    const { data: formData } = api.event.getEvent.useQuery({ id: ID ?? "" }, {
         // refetchOnMount: false,
         refetchOnWindowFocus: false
     });
@@ -40,7 +43,7 @@ export default function CreateEvent() {
 
     const defaultVals: z.infer<typeof formSchema> = {
         name: "",
-        description: "Formatting is <b><i>supported</i></b>!",
+        description: "",
         type: "hackathon",
         dateandtime: {
             date: new Date(),
@@ -49,23 +52,6 @@ export default function CreateEvent() {
     };
 
     const [formVals, setFormVals] = useState<z.infer<typeof formSchema>>(defaultVals);
-
-    useEffect(() => {
-        if (formData) {
-            setFormVals({
-                name: formData.name,
-                description: formData.description || defaultVals.description,
-                type: formData.type as Event["type"],
-                dateandtime: {
-                    date: moment(formData.date).toDate(),
-                    time: moment(moment(formData.date).toDate())
-                        .toArray()
-                        .slice(3, 5)
-                        .map((x) => x.toString().padStart(2, "0")),
-                },
-            });
-        }
-    }, [formData, editEventId]);    
 
     const formSchema = z.object({
         name: z.string(),
@@ -81,24 +67,44 @@ export default function CreateEvent() {
         resolver: zodResolver(formSchema),
         defaultValues: defaultVals,
         mode: 'onChange',
-        values: formVals
     });
 
+    useEffect(() => {
+        if (formData) {
+
+            form.setValue('name', formData.name);
+            form.setValue('description', formData.description );
+            form.setValue('type', formData.type as Event["type"]);
+            form.setValue('dateandtime', {
+                date: moment(formData.date).toDate(),
+                time: moment(moment(formData.date).toDate())
+                    .toArray()
+                    .slice(3, 5)
+                    .map((x) => x.toString().padStart(2, "0")),
+            });
+        }
+    }, [formData, form]);
+    
+    
 function formSubmit(values: z.infer<typeof formSchema>) {
     const event = {
         creatorID: session!.user.id,
         name: values.name,
         description: values.description,
         type: values.type,
-        date: moment([...moment(values.dateandtime.date).toArray().slice(0, 3), ...values.dateandtime.time]).toISOString()
+        date: moment([...moment(values.dateandtime.date).toArray().slice(0, 3), ...values.dateandtime.time]).toISOString(),
+        public: formData!.public
     };
-    console.log(event);
-    const res = eventEdit.mutate({ event: event, id: editEventId! });
-    toast({
-        description: "Event edited successfully!",
-        variant: "success"
+    // console.log(event);
+    const res = eventEdit.mutate({ event: event, id: ID }, {
+        onSuccess(data) {
+            toast({
+                description: "Event edited successfully!",
+                variant: "success"
+            });
+            router.push("/events/" + data.id);
+        }
     });
-    router.push("/dashboard");
 }
 
 return (
@@ -111,7 +117,7 @@ return (
             {formData && (
                 <>
                     <span className="w-1/3 items-start mt-32">
-                        <Link className="text-sm flex items-center hover:underline" href="/dashboard"><ChevronLeft className="w-5 h-5" /> Back</Link>
+                        <Link className="text-sm flex items-center hover:underline" href={"/events/" + ID}><ChevronLeft className="w-5 h-5" /> Back</Link>
                     </span>
                     <h1 className="w-1/3 text-3xl font-semibold text-left">Edit Event</h1>
                     <div className="w-1/3 my-2 items-center border rounded-md p-7">
@@ -132,15 +138,18 @@ return (
                             <FormField
                                 control={form.control}
                                 name="description"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Event Description</FormLabel>
-                                        <FormControl>
-                                            <TipTap description={field.value} onChange={field.onChange} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
+                                render={({ field }) => {
+                                    // console.log(field.value);
+                                    return (
+                                        <FormItem>
+                                            <FormLabel>Event Description</FormLabel>
+                                            <FormControl>
+                                                <TipTap description={field.value} onChange={field.onChange} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )
+                                }}
                             /><br /><br />
                             <FormField
                                 control={form.control}
@@ -268,6 +277,6 @@ return (
 )
 }
 
-CreateEvent.auth = {
-    role: "club"
+EditEvent.auth = {
+    role: ["club", "admin"]
 }

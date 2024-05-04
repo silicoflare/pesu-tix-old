@@ -12,6 +12,8 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { env } from "~/env.mjs";
 import { db } from "~/server/db";
 import { Role, StudentInfo, ClubInfo, AdminInfo } from "~/types";
+import { server_api } from "~/utils/api";
+import { sha256 } from "js-sha256";
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -128,24 +130,23 @@ export const authOptions: NextAuthOptions = {
             role: "student" as "student",
             id: data.profile.prn,
             studentInfo: {
-              name: data.profile.name,
               prn: data.profile.prn,
               srn: data.profile.srn,
-              email: data.profile.email,
+              name: data.profile.name,
               phone: data.profile.phone,
+              email: data.profile.email,
               program: data.profile.program,
-              branch_short_code: data.profile.branch_short_code,
-              branch: data.profile.branch,
+              branch: classAndSection.branch,
               semester: data.profile.semester,
               section: data.profile.section,
-              campus_code: data.profile.campus_code,
               campus: data.profile.campus,
-              class: classAndSection.class,
               cycle: classAndSection.cycle,
-              department: classAndSection.department,
-              institute_name: classAndSection.institute_name,
             }
           };
+          const res = await server_api.student.findStudent.query({ prn: user.studentInfo.prn });
+          if (res === null) {
+            await server_api.student.addStudent.mutate({ student: user.studentInfo });
+          }
           return user;
         }
         // if user data could not be retrieved
@@ -160,32 +161,36 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials, req) {
+        const res = await server_api.club.getClub.query({ username: credentials!.username });
         let user = null;
-        if (credentials?.username == "pragma" && credentials?.password == "pragma") {
+        
+        if (res && res.password === sha256(credentials!.password)) {
           user = {
             role: "club" as "club",
-            id: "pragma",
+            id: res.username,
             clubInfo: {
-              username: "pragma",
-              name: "pragma",
-              campus: "RR" as "RR"
+              username: res.username,
+              name: res.name,
+              campus: res.campus as ClubInfo["campus"],
             }
-          };
-        }
-        else if (credentials?.username == "admin" && credentials?.password == "admin") {
-          user = {
-            role: "admin" as "admin",
-            id: "admin",
-            adminInfo: {
-              username: "admin",
-              name: "Admin"
-            }
-          };
+          }
         }
         else  {
-          user = null;
-        }
-        console.log(user);
+          const res = await server_api.admin.getAdmin.query({ username: credentials!.username });
+          if (res && res.password === sha256(credentials!.password)) {
+            user = {
+              role: "admin" as "admin",
+              id: res.username,
+              adminInfo: {
+                username: res.username,
+                name: res.name,
+              }
+            }
+          }
+          else  {
+            user = null;
+          }
+        }        
         return user;
       },
     })

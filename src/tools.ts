@@ -3,3 +3,4 @@ export function namify(name: string)    {
     tokens = tokens.map(token => token.charAt(0).toUpperCase() + token.slice(1).toLowerCase());
     return tokens.join(' ');
 }
+

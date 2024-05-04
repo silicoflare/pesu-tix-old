@@ -21,6 +21,8 @@ import { useSession } from "next-auth/react";
 import { api } from "~/utils/api";
 import { useToast } from "~/components/ui/use-toast";
 import { useRouter } from "next/router";
+import { useAtom } from "jotai";
+import { viewEventID } from "~/atoms";
 
 export default function CreateEvent() {
     const { data: session } = useSession();
@@ -58,16 +60,21 @@ export default function CreateEvent() {
             name: values.name,
             description: values.description,
             type: values.type,
-            date: moment([...moment(values.dateandtime.date).toArray().slice(0,3), ...values.dateandtime.time]).toISOString()
+            date: moment([...moment(values.dateandtime.date).toArray().slice(0,3), ...values.dateandtime.time]).toISOString(),
+            public: false
         };
 
-        const res = eventCreate.mutate({ event });
-
-        toast({
-            description: "Event created successfully!",
-            variant: "success"
+        const res = eventCreate.mutate({ event }, {
+            onSuccess(data) {
+                toast({
+                    description: "Event created successfully!",
+                    variant: "success"
+                });
+                router.push("/events/" + data.id);
+            },
         });
-        router.push("/dashboard");
+
+        
     }
 
     return (
@@ -78,7 +85,7 @@ export default function CreateEvent() {
             <div className={`flex flex-col items-center w-screen h-screen bg-background text-primary gap-y-5 ${inter}`}>
                 <Navbar />
                 <span className="w-1/3 items-start mt-32">
-                    <Link className="text-sm flex items-center hover:underline" href="/dashboard"><ChevronLeft className="w-5 h-5" /> Back</Link>
+                    <Link className="text-sm flex items-center hover:underline" href="/events"><ChevronLeft className="w-5 h-5" /> Back</Link>
                 </span>
                 <h1 className="w-1/3 text-3xl font-semibold text-left">Create Event</h1>
                 <div className="w-1/3 my-2 items-center border rounded-md p-7">

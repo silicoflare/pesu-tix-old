@@ -4,3 +4,24 @@ export function namify(name: string)    {
     return tokens.join(' ');
 }
 
+export const studentFields: Record<string, string> = {
+    prn: "PRN",
+    srn: "SRN",
+    name: "Name",
+    phone: "Phone",
+    email: "Email",
+    program: "Program",
+    branch: "Branch",
+    semester: "Semester",
+    section: "Section",
+    campus: "Campus",
+    cycle: "Cycle",
+};
+
+export function studentField(field: string): string {
+    return studentFields[field] || "";
+}
+
+export function snakify(name: string)   {
+    return name.replace(/ /g, '_').toLowerCase();
+}

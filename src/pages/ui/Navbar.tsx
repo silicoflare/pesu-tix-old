@@ -41,7 +41,7 @@ export default function Navbar({ hidelogin = false } : { hidelogin?: boolean }) 
                         </DropdownMenuContent>
                     </DropdownMenu>
                 ) : (
-                    <Button onClick={() => router.push("/login")}>
+                    <Button onClick={() => signIn()}>
                         Login
                     </Button>
                 ))}

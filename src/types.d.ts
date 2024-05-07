@@ -36,6 +36,14 @@ export type Event = {
     creatorID: string;
     public: boolean;
     registrations?: any[];
-    // createdAt: Date;
-    // updatedAt: Date;
+    participation?: "SOLO" | "TEAM";
+    maxTeamMembers?: number;
 };
+
+export type Registration = {
+    id: string;
+    eventID: string;
+    regType: "SOLO" | "TEAM";
+    teamName?: string;
+    students: any[];
+}

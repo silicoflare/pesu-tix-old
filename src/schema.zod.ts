@@ -14,6 +14,14 @@ export const ZodStudent = z.object({
     cycle: z.string(),
 });
 
+export const ZodRegistration = z.object({
+    eventID: z.string(),
+    regType: z.enum(["SOLO", "TEAM"]),
+    teamName: z.string().optional(),
+    maxTeamMembers: z.number(),
+    students: z.array(ZodStudent),
+})
+
 export const ZodEvent = {
     name: z.string(),
     creatorID: z.string(),
@@ -21,5 +29,7 @@ export const ZodEvent = {
     description: z.string(),
     type: z.enum(["hackathon", "seminar", "workshop", "performance", "screening", "CTF", "talk", "treasure-hunt"] as const),
     public: z.boolean(),
-    registrations: z.array(ZodStudent).optional(),
+    participation: z.enum(["SOLO", "TEAM"]),
+    maxTeamMembers: z.number(),
+    registrations: z.array(ZodRegistration).optional(),
 };

@@ -57,8 +57,7 @@ model User {
 }
 
 model Student {
-    id           String         @id @default(cuid())
-    prn          String         @unique
+    prn          String         @id
     srn          String
     name         String
     phone        String?
@@ -74,15 +73,14 @@ model Student {
 }
 
 model Admin {
-    id       String @id @default(cuid())
-    username String @unique
+    username String @id
+    password String
     name     String
     user     User?  @relation(name: "AdminToUser")
 }
 
 model Club {
-    id       String  @id @default(cuid())
-    username String  @unique
+    username String  @id
     password String
     name     String
     campus   Campus
@@ -91,26 +89,29 @@ model Club {
 }
 
 model Event {
-    id            String         @id @default(cuid())
-    name          String
-    description   String
-    type          String
-    date          String
-    createdAt     DateTime       @default(now())
-    updatedAt     DateTime       @updatedAt
-    public        Boolean        @default(false)
-    registrations Registration[] @relation("EventToReg")
-    createdBy     Club           @relation(name: "ClubToEvent", fields: [creatorID], references: [username], onDelete: Cascade)
-    creatorID     String
+    id             String         @id @default(cuid())
+    name           String
+    description    String
+    type           String
+    date           String
+    participation  RegType
+    maxTeamMembers Int
+    createdAt      DateTime       @default(now())
+    updatedAt      DateTime       @updatedAt
+    public         Boolean        @default(false)
+    registrations  Registration[] @relation("EventToReg")
+    createdBy      Club           @relation(name: "ClubToEvent", fields: [creatorID], references: [username], onDelete: Cascade)
+    creatorID      String
 }
 
 model Registration {
-    id       Int       @id @default(autoincrement())
-    event    Event     @relation("EventToReg", fields: [eventId], references: [id], onDelete: Cascade)
-    eventId  String
-    regType  RegType
-    teamName String?
-    students Student[]
+    id             String    @id @default(cuid())
+    event          Event     @relation("EventToReg", fields: [eventId], references: [id], onDelete: Cascade)
+    eventId        String
+    regType        RegType
+    teamName       String?
+    maxTeamMembers Int
+    students       Student[]
 }
 
 enum UserRole {

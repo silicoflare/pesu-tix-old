@@ -15,7 +15,9 @@ const EditEventInput = z.object({
         description: z.string(),
         type: z.string(),
         date: z.string(),
-        public: z.boolean()
+        public: z.boolean(),
+        participation: z.string(),
+        maxTeamMembers: z.number(),
     }),
 });
 
@@ -50,6 +52,9 @@ export const eventRouter = createTRPCRouter({
         .query(({ ctx, input }) => {
             return ctx.db.event.findUnique({
                 where: { id: input.id },
+                include: { registrations: {
+                    include: { students: true }
+                } }
             })
         }),
 
@@ -63,7 +68,9 @@ export const eventRouter = createTRPCRouter({
                     description: input.event.description,
                     type: input.event.type,
                     date: input.event.date,
-                    public: false
+                    public: input.event.public,
+                    participation: input.event.participation,
+                    maxTeamMembers: 1
                 },
                 select: { id: true }
             });
@@ -86,167 +93,113 @@ export const eventRouter = createTRPCRouter({
             });
         }),
 
-    // toggleRegistration: protectedProcedure
-    //     .input(z.object({ id: z.string(), student: z.object(ZodStudent) }))
-    //     .mutation(async ({ ctx, input }) => {
-    //         const { id, student } = input;
-
-    //         // Check if the student is already registered for the event
-    //         const existingRegistration = await ctx.db.event.findFirst({
-    //             where: {
-    //                 id,
-    //                 registrations: {
-    //                     some: {
-    //                         prn: student.prn,
-    //                     },
-    //                 },
-    //             },
-    //         });
-
-    //         if (existingRegistration) {
-    //             // Remove the existing registration
-    //             await ctx.db.event.update({
-    //                 where: { id },
-    //                 data: {
-    //                     registrations: {
-    //                         delete: {
-    //                             prn: student.prn,
-    //                         },
-    //                     },
-    //                 },
-    //             });
-    //             return {};
-    //         }
-
-    //         const newRegistration = await ctx.db.event.update({
-    //             where: { id },
-    //             data: {
-    //                 registrations: {
-    //                     create: {
-    //                         prn: student.prn,
-    //                         srn: student.srn,
-    //                         name: student.name,
-    //                         phone: student.phone,
-    //                         email: student.email,
-    //                         program: student.program,
-    //                         branch_short_code: student.branch_short_code,
-    //                         branch: student.branch,
-    //                         semester: student.semester,
-    //                         section: student.section,
-    //                         campus_code: student.campus_code,
-    //                         campus: student.campus,
-    //                         class: student.class,
-    //                         cycle: student.cycle,
-    //                         department: student.department,
-    //                         institute_name: student.institute_name,
-    //                     },
-    //                 },
-    //             },
-    //         });
-    //         return newRegistration;
-    //     }),
-
-    // toggleRegistration: protectedProcedure
-    //     .input(z.object({ id: z.string(), prn: z.string() }))
-    //     .mutation(async ({ ctx, input }) => {
-    //         // Check if the student is already registered for the event
-    //         const event = await ctx.db.event.findFirst({
-    //             where: {
-    //                 id: input.id,
-    //             },
-    //             include: {
-    //                 registrations: {
-    //                     where: {
-    //                         prn: input.prn,
-    //                     },
-    //                 },
-    //             },
-    //         });
-
-    //         if (event?.registrations) {
-    //             // Remove the registration from the event
-    //             await ctx.db.event.update({
-    //                 where: {
-    //                     id: input.id,
-    //                 },
-    //                 data: {
-    //                     registrations: {
-    //                         disconnect: {
-    //                             prn: input.prn,
-    //                         },
-    //                     },
-    //                 },
-    //             });
-    //             return {};
-    //         }
-
-    //         // Add the registration to the event
-    //         await ctx.db.event.update({
-    //             where: {
-    //                 id: input.id,
-    //             },
-    //             data: {
-    //                 registrations: {
-    //                     connect: {
-    //                         prn: input.prn,
-    //                     }
-    //                 },
-    //             },
-    //         });
-    //         return {};
-    //     }),
-
-    addRegistration: protectedProcedure
-        .input(z.object({ id: z.string(), prn: z.string() }))
-        .mutation(({ ctx, input }) => {
-            return ctx.db.event.update({
-                where: { id: input.id },
-                data: {
-                    registrations: {
-                        connect: {
-                            prn: input.prn,
-                        }
-                    },
-                },
-            });
-        }),
-
-    removeRegistration: protectedProcedure
-        .input(z.object({ id: z.string(), prn: z.string() }))
-        .mutation(({ ctx, input }) => {
-            return ctx.db.event.update({
-                where: { id: input.id },
-                data: {
-                    registrations: {
-                        disconnect: {
-                            prn: input.prn,
-                        }
-                    },
-                },
-            });
-        }),
-
-
-    checkRegistration: protectedProcedure
-        .input(z.object({ id: z.string(), prn: z.string() }))
-        .query(({ ctx, input }) => {
-            return ctx.db.event.findFirst({
-                where: {
-                    id: input.id,
-                    registrations: {
-                        some: {
-                            prn: input.prn,
-                        },
-                    },
-                },
-            });
-        }),
-
     deleteEvent: protectedProcedure
         .input(z.object({ id: z.string() }))
         .mutation(({ ctx, input }) => {
             return ctx.db.event.delete({
                 where: { id: input.id },
+            });
+        }),
+
+    addRegistration: protectedProcedure
+        .input(z.object({ id: z.string(), prn: z.string(), teamID: z.string().optional(), teamName: z.string().optional() }))
+        .mutation(async ({ ctx, input }) => {
+            if (input.teamID) {
+                // team exists
+                const maxMembers = await ctx.db.registration.findFirst({
+                    where: { id: input.teamID },
+                    include: { students: true }
+                });
+                if (maxMembers!.maxTeamMembers < maxMembers!.students.length) {
+                    // team is not full
+                    await ctx.db.registration.update({
+                        where: { id: input.teamID },
+                        data: {
+                            students: {
+                                connect: {
+                                    prn: input.prn
+                                }
+                            }
+                        }
+                    });
+                }
+                else {
+                    // team is full
+                    throw new Error("Team is full");
+                }
+            }
+            else {
+                // team does not exist
+                const event = await ctx.db.event.findUnique({
+                    where: { id: input.id },
+                });
+                await ctx.db.registration.create({
+                    data: {
+                        event: { connect: { id: input.id } },
+                        students: {
+                            connect: {
+                                prn: input.prn
+                            }
+                        },
+                        teamName: input.teamName,
+                        maxTeamMembers: event!.maxTeamMembers,
+                        regType: event!.participation,
+                    }
+                });
+            }
+        }),
+
+    removeRegistration: protectedProcedure
+        .input(z.object({ id: z.string(), prn: z.string(), regID: z.string() }))
+        .mutation(async ({ ctx, input }) => {
+            const registration = await ctx.db.registration.findFirst({
+                where: { id: input.regID },
+                include: { students: true }
+            });
+            if (registration!.regType === "TEAM") {
+                // team participation
+                if (registration!.students.length > 1) {
+                    // more than 1 student in team
+                    await ctx.db.registration.update({
+                        where: { id: input.regID },
+                        data: {
+                            students: {
+                                disconnect: {
+                                    prn: input.prn
+                                }
+                            }
+                        }
+                    });
+                }
+                else {
+                    // only 1 student in team
+                    await ctx.db.registration.delete({
+                        where: { id: input.regID },
+                    });
+                }
+            }
+            else {
+                // solo participation
+                await ctx.db.registration.delete({
+                    where: { id: input.regID },
+                });
+            }
+        }),
+
+
+
+    checkRegistration: protectedProcedure
+        .input(z.object({ id: z.string(), prn: z.string() }))
+        .query(({ ctx, input }) => {
+            return ctx.db.registration.findFirst({
+                where: {
+                    eventId: input.id,
+                    students: {
+                        some: {
+                            prn: input.prn,
+                        },
+                    },
+                },
             });
         }),
 })

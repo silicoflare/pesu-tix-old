@@ -21,8 +21,6 @@ import { useSession } from "next-auth/react";
 import { api } from "~/utils/api";
 import { useToast } from "~/components/ui/use-toast";
 import { useRouter } from "next/router";
-import { useAtom } from "jotai";
-import { viewEventID } from "~/atoms";
 
 export default function CreateEvent() {
     const { data: session } = useSession();
@@ -61,7 +59,9 @@ export default function CreateEvent() {
             description: values.description,
             type: values.type,
             date: moment([...moment(values.dateandtime.date).toArray().slice(0,3), ...values.dateandtime.time]).toISOString(),
-            public: false
+            public: false,
+            participation: "SOLO",
+            maxTeamMembers: 1,
         };
 
         const res = eventCreate.mutate({ event }, {

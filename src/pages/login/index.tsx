@@ -35,6 +35,7 @@ const SignInPage: FunctionComponent = () => {
     })
 
     const router = useRouter();
+    const { callbackUrl } = router.query;
 
     const handleSubmit = async (values: z.infer<typeof formSchema>) => {
 
@@ -51,7 +52,7 @@ const SignInPage: FunctionComponent = () => {
             setLoading(false);
             
             if (res !== null && res!.ok) {
-                router.push('/events');
+                router.push(callbackUrl as string || '/events');
             } else {
                 if (res?.status === 401) setError("Invalid username or password");
                 setError("An error occurred. Please try again.");
@@ -67,11 +68,11 @@ const SignInPage: FunctionComponent = () => {
             
             if (res!.ok) {
                 if(session?.user.role == "admin") {
-                    router.push('/admin');
+                    router.push(callbackUrl as string || '/admin');
                 }
                 else {
                     setClubId(values.username);
-                    router.push('/events');
+                    router.push(callbackUrl as string || '/events');
                 }
             } else {
                 if (res?.status === 401)    {

@@ -3,7 +3,7 @@ import moment from "moment";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { useToast } from "~/components/ui/use-toast";
 import { montserrat } from "~/fonts";
@@ -16,12 +16,16 @@ import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover
 import { PopoverClose } from "@radix-ui/react-popover";
 import Image from "next/image";
 
+
 export default function ViewEvent() {
     const { data: session } = useSession();
     const router = useRouter();
     const { toast } = useToast();
     const { eventID } = router.query;
     let ID: string = "";
+
+    const delRef = useRef(null);
+    const editRef = useRef(null);
 
     if (router.isReady) {
         ID = eventID as string;
@@ -90,12 +94,21 @@ export default function ViewEvent() {
     function toggleRegistration() {
         setIsRegd((old: boolean) => {
             if (old) {
-                deregister.mutate({ id: ID, prn: session!.user.id });
-                toast({
-                    description: "Unregistered from event!",
-                    variant: "success"
-                });
+                let reg: string | null = null;
+                server_api.event.checkRegistration.query({ id: ID, prn: session!.user.id })
+                    .then(data => {
+                        reg = data?.id || null;
+                        deregister.mutate({ id: ID, prn: session!.user.id, regID: reg || "" });
+                        toast({
+                            description: "Unregistered from event!",
+                            variant: "success"
+                        });
+                    })
+                    .catch(error => {
+                        console.error("Error checking registration:", error);
+                    });
                 return false;
+
             }
             else {
                 register.mutate({ id: ID, prn: session!.user.id });
@@ -117,21 +130,59 @@ export default function ViewEvent() {
                         <Link className="text-sm flex items-center hover:underline" href="/events"><ChevronLeft className="w-5 h-5" /> Back</Link>
                         <Authed roles={["club", "admin"]}>
                             <span className="flex flex-row items-center gap-x-2">
-                                <Tippy content="Delete event">
-                                    <Button variant="outline" onClick={deleteEvent}>
-                                        <Trash className="w-5 h-5" />
-                                    </Button>
-                                </Tippy>
+                                <Tippy content="Delete event" reference={delRef} />
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" ref={delRef}>
+                                            <Trash className="w-5 h-5" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[25rem]">
+                                        <div className="flex flex-col items-center w-full">
+                                            <span className="w-full text-center text-lg">
+                                                Are you sure you want to delete this event? <span className="uppercase font-bold">This action cannot be undone.</span>
+                                            </span>
+                                            <span className="flex flex-row justify-center items-center w-full gap-x-5 mt-5">
+                                                <PopoverClose asChild>
+                                                    <Button onClick={deleteEvent} variant="destructive">Yes</Button>
+                                                </PopoverClose>
+                                                <PopoverClose asChild>
+                                                    <Button variant="outline">No</Button>
+                                                </PopoverClose>
+                                            </span>
+                                        </div>
+                                    </PopoverContent>
+                                </Popover>
                                 <Tippy content="View registrations">
-                                    <Button variant="outline">
-                                        <Users className="w-5 h-5" />
-                                    </Button>
+                                    <Link href={`/events/${ID}/registrations`}>
+                                        <Button variant="outline">
+                                            <Users className="w-5 h-5" />
+                                        </Button>
+                                    </Link>
                                 </Tippy>
-                                <Tippy content={isPublic ? "Make event private" : "Make event public"}>
-                                    <Button onClick={togglePrivacy} variant="outline">
-                                        {isPublic ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
-                                    </Button>
-                                </Tippy>
+                                <Tippy content={isPublic ? "Make event private" : "Make event public"} reference={editRef} />
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline">
+                                            {isPublic ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[25rem]">
+                                        <div className="flex flex-col items-center w-full">
+                                            <span className="w-full text-center text-lg">
+                                                Are you sure you want to make this event {isPublic ? "private" : "public"}?
+                                            </span>
+                                            <span className="flex flex-row justify-center items-center w-full gap-x-5 mt-5">
+                                                <PopoverClose asChild>
+                                                    <Button onClick={togglePrivacy}>Yes</Button>
+                                                </PopoverClose>
+                                                <PopoverClose asChild>
+                                                    <Button variant="outline">No</Button>
+                                                </PopoverClose>
+                                            </span>
+                                        </div>
+                                    </PopoverContent>
+                                </Popover>
                                 <Tippy content="Edit event">
                                     <Button onClick={() => router.push("/events/" + ID + "/edit")}>
                                         <Pencil className="w-5 h-5" />
@@ -159,7 +210,7 @@ export default function ViewEvent() {
                                         <span className="text-xs text-accent-foreground">
                                             {isRegd ? "" : "By registering, you accept all the rules of the event and your data will be shared with the club for registration."}
                                         </span>
-                                        </span>
+                                    </span>
                                     {/* <span className="flex flex-row justify-center items-center w-full gap-x-5 mt-5">
                                         <PopoverClose onClick={toggleRegistration} className="bg-gray-900 text-gray-50 shadow hover:bg-gray-900/90 dark:bg-gray-50 dark:text-gray-900 dark:hover:bg-gray-50/90">Yes</PopoverClose>
                                         <PopoverClose>Yes</PopoverClose>

@@ -46,3 +46,6 @@ yarn-error.log*
 
 # sql
 migration*.*
+
+# nhost local
+nhost

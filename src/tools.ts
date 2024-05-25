@@ -1,3 +1,5 @@
+import { NhostClient } from "@nhost/nextjs";
+
 export function namify(name: string)    {
     let tokens = name.split(' ');
     tokens = tokens.map(token => token.charAt(0).toUpperCase() + token.slice(1).toLowerCase());
@@ -25,3 +27,9 @@ export function studentField(field: string): string {
 export function snakify(name: string)   {
     return name.replace(/ /g, '_').toLowerCase();
 }
+
+export const nhost = new NhostClient({
+    subdomain: process.env.NEXT_PUBLIC_SUBDOMAIN,
+    region: process.env.NEXT_PUBLIC_REGION,
+    adminSecret: process.env.NEXT_PUBLIC_SECRET,
+});

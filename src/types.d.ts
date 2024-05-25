@@ -28,16 +28,18 @@ export type AdminInfo = {
 };
 
 export type Event = {
-    id: string;
+    id?: string;
     name: string;
     description: string;
-    type: "hackathon" | "seminar" | "workshop" | "performance" | "screening" | "CTF" | "talk" | "treasure-hunt";
+    imageURL: string;
+    type: string;
     date: string;
     creatorID: string;
     public: boolean;
-    registrations?: any[];
-    participation?: "SOLO" | "TEAM";
-    maxTeamMembers?: number;
+    registrations?: Registration[];
+    participation: "SOLO" | "TEAM";
+    maxTeamMembers: number;
+    password: string;
 };
 
 export type Registration = {

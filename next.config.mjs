@@ -17,6 +17,14 @@ const config = {
     locales: ["en"],
     defaultLocale: "en",
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "drtrwkdxomylrqnhlehb.storage.ap-south-1.nhost.run",
+      }
+    ]
+  }
 };
 
 export default config;

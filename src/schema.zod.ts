@@ -27,9 +27,11 @@ export const ZodEvent = {
     creatorID: z.string(),
     date: z.string(),
     description: z.string(),
-    type: z.enum(["hackathon", "seminar", "workshop", "performance", "screening", "CTF", "talk", "treasure-hunt"] as const),
+    imageURL: z.string(),
+    type: z.string(),
     public: z.boolean(),
     participation: z.enum(["SOLO", "TEAM"]),
     maxTeamMembers: z.number(),
     registrations: z.array(ZodRegistration).optional(),
+    password: z.string()
 };

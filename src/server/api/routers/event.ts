@@ -66,15 +66,29 @@ export const eventRouter = createTRPCRouter({
                     name: input.event.name,
                     createdBy: { connect: { username: input.event.creatorID } },
                     description: input.event.description,
+                    imageURL: input.event.imageURL,
                     type: input.event.type,
                     date: input.event.date,
                     public: input.event.public,
                     participation: input.event.participation,
-                    maxTeamMembers: 1
+                    maxTeamMembers: input.event.maxTeamMembers,
+                    password: input.event.password
                 },
                 select: { id: true }
             });
             return { id: event.id };
+        }),
+
+    addImage: protectedProcedure
+        .input(z.object({ id: z.string(), image: z.string() }))
+        .mutation(async ({ ctx, input }) => {
+            const { id, image } = input;
+            return ctx.db.event.update({
+                where: { id },
+                data: {
+                    imageURL: image
+                },
+            });
         }),
 
     editEvent: protectedProcedure
@@ -106,11 +120,11 @@ export const eventRouter = createTRPCRouter({
         .mutation(async ({ ctx, input }) => {
             if (input.teamID) {
                 // team exists
-                const maxMembers = await ctx.db.registration.findFirst({
+                const regist = await ctx.db.registration.findFirst({
                     where: { id: input.teamID },
                     include: { students: true }
                 });
-                if (maxMembers!.maxTeamMembers < maxMembers!.students.length) {
+                if (regist!.students.length < regist!.maxTeamMembers) {
                     // team is not full
                     await ctx.db.registration.update({
                         where: { id: input.teamID },
@@ -121,6 +135,10 @@ export const eventRouter = createTRPCRouter({
                                 }
                             }
                         }
+                    });
+                    return ctx.db.registration.findFirst({
+                        where: { id: input.teamID },
+                        include: { students: true }
                     });
                 }
                 else {
@@ -133,7 +151,7 @@ export const eventRouter = createTRPCRouter({
                 const event = await ctx.db.event.findUnique({
                     where: { id: input.id },
                 });
-                await ctx.db.registration.create({
+                const res = await ctx.db.registration.create({
                     data: {
                         event: { connect: { id: input.id } },
                         students: {
@@ -144,18 +162,29 @@ export const eventRouter = createTRPCRouter({
                         teamName: input.teamName,
                         maxTeamMembers: event!.maxTeamMembers,
                         regType: event!.participation,
+                        ownerID: input.prn
                     }
+                });
+                return ctx.db.registration.findFirst({
+                    where: { id: res.id },
+                    include: { students: true }
                 });
             }
         }),
 
     removeRegistration: protectedProcedure
-        .input(z.object({ id: z.string(), prn: z.string(), regID: z.string() }))
+        .input(z.object({ id: z.string(), prn: z.string().optional(), regID: z.string() }))
         .mutation(async ({ ctx, input }) => {
             const registration = await ctx.db.registration.findFirst({
                 where: { id: input.regID },
                 include: { students: true }
             });
+            if (!input.prn) {
+                await ctx.db.registration.delete({
+                    where: { id: input.regID },
+                });
+                return;
+            }
             if (registration!.regType === "TEAM") {
                 // team participation
                 if (registration!.students.length > 1) {
@@ -170,6 +199,15 @@ export const eventRouter = createTRPCRouter({
                             }
                         }
                     });
+                    if (registration!.ownerID === input.prn) {
+                        // team owner
+                        await ctx.db.registration.update({
+                            where: { id: input.regID },
+                            data: {
+                                ownerID: registration!.students.find((s: any) => s.prn !== input.prn)!.prn
+                            }
+                        });
+                    }
                 }
                 else {
                     // only 1 student in team
@@ -200,6 +238,7 @@ export const eventRouter = createTRPCRouter({
                         },
                     },
                 },
+                include: { students: true }
             });
         }),
 })

@@ -11,16 +11,17 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { CalendarIcon, ChevronLeft } from "lucide-react";
 import { Calendar } from "~/components/ui/calendar";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import TipTap from "~/pages/ui/TipTap";
 import Link from "next/link";
 import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "~/components/ui/input-otp";
 import { Event } from "~/types";
 import moment from "moment";
 import { useSession } from "next-auth/react";
-import { api } from "~/utils/api";
+import { api, server_api } from "~/utils/api";
 import { useToast } from "~/components/ui/use-toast";
 import { useRouter } from "next/router";
+import { nhost } from "~/tools";
 
 export default function CreateEvent() {
     const { data: session } = useSession();
@@ -32,7 +33,14 @@ export default function CreateEvent() {
     const formSchema = z.object({
         name: z.string(),
         description: z.string(),
-        type: z.enum(["hackathon", "seminar", "workshop", "performance", "screening", "CTF", "talk", "treasure-hunt"] as const),
+        image: z.instanceof(File).refine(x => x.size < 1024 * 1024 * 5, {
+            message: "File size must be less than 5MB"
+        }).refine(x => ["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg"].includes(x.type), {
+            message: "File must be an image"
+        }),
+        type: z.string(),
+        participation: z.string(),
+        maxTeamMembers: z.number().min(1).max(7),
         dateandtime: z.object({
             date: z.date(),
             time: z.string().array().length(2)
@@ -45,6 +53,8 @@ export default function CreateEvent() {
             name: "",
             description: "Formatting is <b><i>supported</i></b>!",
             type: "hackathon",
+            participation: "SOLO",
+            maxTeamMembers: 1,
             dateandtime: {
                 date: new Date(),
                 time: moment(new Date()).toArray().slice(3, 5).map(x => x.toString().padStart(2, '0'))
@@ -52,29 +62,50 @@ export default function CreateEvent() {
         }
     })
 
+    const participation = useWatch({
+        control: form.control,
+        name: "participation"
+    });
+
     function formSubmit(values: z.infer<typeof formSchema>) {
+        const chars = "0123456789abcdefghijklmnopqrstuvwxyz!@#$%^&*()ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const passwordLength = 10;
+        let password = "";
+        for (let i = 0; i <= passwordLength; i++) {
+            let randomNumber = Math.floor(Math.random() * chars.length);
+            password += chars.substring(randomNumber, randomNumber + 1);
+        }
         const event: Event = {
             creatorID: session!.user.id,
             name: values.name,
             description: values.description,
+            imageURL: "",
             type: values.type,
-            date: moment([...moment(values.dateandtime.date).toArray().slice(0,3), ...values.dateandtime.time]).toISOString(),
+            date: moment([...moment(values.dateandtime.date).toArray().slice(0, 3), ...values.dateandtime.time]).toISOString(),
             public: false,
-            participation: "SOLO",
-            maxTeamMembers: 1,
+            participation: values.participation as "SOLO" | "TEAM",
+            maxTeamMembers: values.maxTeamMembers,
+            password: password
         };
 
-        const res = eventCreate.mutate({ event }, {
-            onSuccess(data) {
-                toast({
-                    description: "Event created successfully!",
-                    variant: "success"
-                });
-                router.push("/events/" + data.id);
-            },
-        });
+        // console.log(event);
+        // return;
 
-        
+        eventCreate.mutate({ event: event }, {
+            onSuccess(data) {
+                nhost.storage.upload({ file: values.image })
+                    .then(res => {
+                        server_api.event.addImage.mutate({ id: data.id, image: res.fileMetadata!.id }).
+                            then(() => {
+                                toast({
+                                    description: "Event created successfully!",
+                                    variant: "success"
+                                });
+                                router.push("/events/" + data.id);
+                            })
+                    })
+            },
+        });        
     }
 
     return (
@@ -103,14 +134,32 @@ export default function CreateEvent() {
                                 </FormItem>
                             )}
                         /><br /><br />
+                        {
+                            form.getValues().description && (
+                                <FormField
+                                    control={form.control}
+                                    name="description"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Event Description</FormLabel>
+                                            <FormControl>
+                                                <TipTap description={field.value} onChange={field.onChange} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            )
+                        }
+                        <br /><br />
                         <FormField
                             control={form.control}
-                            name="description"
+                            name="image"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Event Description</FormLabel>
+                                    <FormLabel>Event Image</FormLabel>
                                     <FormControl>
-                                        <TipTap description={field.value} onChange={field.onChange} />
+                                        <Input type="file" onChange={(e) => field.onChange(e.target.files![0])} accept="image/*" />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -123,61 +172,67 @@ export default function CreateEvent() {
                                 <FormItem>
                                     <FormLabel>Event Type</FormLabel>
                                     <FormControl>
-                                        <RadioGroup {...field} onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-3 px-5 w-full gap-y-5">
+                                        <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        /><br /><br />
+                        <FormField
+                            control={form.control}
+                            name="participation"
+                            render={({ field }) => (
+                                <FormItem className="space-y-3">
+                                    <FormLabel>Participation type</FormLabel>
+                                    <FormControl>
+                                        <RadioGroup
+                                            onValueChange={field.onChange}
+                                            defaultValue={field.value}
+                                            className="flex flex-col space-y-1"
+                                        >
                                             <FormItem className="flex items-center space-x-3 space-y-0">
                                                 <FormControl>
-                                                    <RadioGroupItem value="hackathon" />
+                                                    <RadioGroupItem value="SOLO" />
                                                 </FormControl>
-                                                <FormLabel>Hackathon</FormLabel>
+                                                <FormLabel className="font-normal">
+                                                    Solo
+                                                </FormLabel>
                                             </FormItem>
                                             <FormItem className="flex items-center space-x-3 space-y-0">
-                                                <FormControl className="flex flex-row items-center">
-                                                    <RadioGroupItem value="seminar" />
+                                                <FormControl>
+                                                    <RadioGroupItem value="TEAM" />
                                                 </FormControl>
-                                                <FormLabel>Seminar</FormLabel>
-                                            </FormItem>
-                                            <FormItem className="flex items-center space-x-3 space-y-0">
-                                                <FormControl className="flex flex-row items-center">
-                                                    <RadioGroupItem value="workshop" />
-                                                </FormControl>
-                                                <FormLabel>Workshop</FormLabel>
-                                            </FormItem>
-                                            <FormItem className="flex items-center space-x-3 space-y-0">
-                                                <FormControl className="flex flex-row items-center">
-                                                    <RadioGroupItem value="performance" />
-                                                </FormControl>
-                                                <FormLabel>Performance</FormLabel>
-                                            </FormItem>
-                                            <FormItem className="flex items-center space-x-3 space-y-0">
-                                                <FormControl className="flex flex-row items-center">
-                                                    <RadioGroupItem value="screening" />
-                                                </FormControl>
-                                                <FormLabel>Screening</FormLabel>
-                                            </FormItem>
-                                            <FormItem className="flex items-center space-x-3 space-y-0">
-                                                <FormControl className="flex flex-row items-center">
-                                                    <RadioGroupItem value="CTF" />
-                                                </FormControl>
-                                                <FormLabel>CTF</FormLabel>
-                                            </FormItem>
-                                            <FormItem className="flex items-center space-x-3 space-y-0">
-                                                <FormControl className="flex flex-row items-center">
-                                                    <RadioGroupItem value="talk" />
-                                                </FormControl>
-                                                <FormLabel>Talk</FormLabel>
-                                            </FormItem>
-                                            <FormItem className="flex items-center space-x-3 space-y-0">
-                                                <FormControl className="flex flex-row items-center">
-                                                    <RadioGroupItem value="treasure-hunt" />
-                                                </FormControl>
-                                                <FormLabel>Treasure Hunt</FormLabel>
+                                                <FormLabel className="font-normal">
+                                                    Team
+                                                </FormLabel>
                                             </FormItem>
                                         </RadioGroup>
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
-                        /><br /><br />
+                        />
+                        <br /><br />
+                        {
+                            participation === "TEAM" && (
+                                <>
+                                    <FormField
+                                        control={form.control}
+                                        name="maxTeamMembers"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Team Members</FormLabel>
+                                                <FormControl>
+                                                    <Input type="number" min={1} max={7} onChange={(e) => field.onChange(parseInt(e.target.value))} value={field.value} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <br /><br />
+                                </>
+                            )
+                        }
                         <FormField
                             control={form.control}
                             name="dateandtime"

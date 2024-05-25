@@ -49,6 +49,9 @@ export default function EventsPage() {
                     creatorID: x.creatorID,
                     public: x.public,
                     registrations: x?.registrations,
+                    imageURL: x.imageURL,
+                    participation: x.participation,
+                    maxTeamMembers: x.maxTeamMembers,
                 }))
             );
         }
@@ -63,6 +66,9 @@ export default function EventsPage() {
                     creatorID: x.creatorID,
                     public: x.public,
                     registrations: x?.registrations,
+                    imageURL: x.imageURL,
+                    participation: x.participation,
+                    maxTeamMembers: x.maxTeamMembers,
                 }))
             );
         }

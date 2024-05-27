@@ -7,13 +7,11 @@ import {
 } from "~/server/api/trpc";
 
 const userZodedSchema = z.object({
-  id: z.string().optional(),
   name: z.string().optional(),
-  email: z.string().optional(),
-  emailVerified: z.string().optional(),
-  image: z.string().optional(),
   prn: z.string().optional(),
   srn: z.string().optional(),
+  phone: z.string().optional(),
+  email: z.string().optional(),
   program: z.string().optional(),
   branch_short_code: z.string().optional(),
   branch: z.string().optional(),

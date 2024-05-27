@@ -1,32 +1,14 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+    // directUrl = env("DIRECT_URL")
+}
 
 generator client {
-    provider = "prisma-client-js"
+    provider      = "prisma-client-js"
+    binaryTargets = ["native", "rhel-openssl-1.0.x"]
 }
 
-datasource db {
-    provider = "sqlite"
-    // NOTE: When using mysql or sqlserver, uncomment the @db.Text annotations in model Account below
-    // Further reading:
-    // https://next-auth.js.org/adapters/prisma#create-the-prisma-schema
-    // https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#string
-    url      = env("DATABASE_URL")
-}
-
-model Post {
-    id        Int      @id @default(autoincrement())
-    name      String
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-
-    createdBy   User   @relation(fields: [createdById], references: [id])
-    createdById String
-
-    @@index([name])
-}
-
-// Necessary for Next auth
 model Account {
     id                String  @id @default(cuid())
     userId            String
@@ -46,35 +28,11 @@ model Account {
 }
 
 model Session {
-    id           String   @id @default(cuid())
+    id           Int      @id @default(autoincrement())
     sessionToken String   @unique
     userId       String
     expires      DateTime
     user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model User {
-    id                String    @id @default(cuid())
-    name              String?
-    email             String?   @unique
-    emailVerified     DateTime?
-    image             String?
-    prn               String?
-    srn               String?
-    program           String?
-    branch_short_code String?
-    semester          String?
-    section           String?
-    campus_code       Int?
-    campus            String?
-    class             String?
-    cycle             String?
-    department        String?
-    branch            String?
-    institute_name    String?
-    accounts          Account[]
-    sessions          Session[]
-    posts             Post[]
 }
 
 model VerificationToken {
@@ -83,4 +41,95 @@ model VerificationToken {
     expires    DateTime
 
     @@unique([identifier, token])
+}
+
+model User {
+    id            String    @id @default(cuid())
+    role          UserRole
+    studentInfo   Student?  @relation(name: "StudentToUser", fields: [studentPRN], references: [prn], onDelete: Cascade)
+    studentPRN    String?   @unique
+    adminInfo     Admin?    @relation(name: "AdminToUser", fields: [adminUsername], references: [username], onDelete: Cascade)
+    adminUsername String?   @unique
+    clubInfo      Club?     @relation(name: "ClubToUser", fields: [clubUsername], references: [username], onDelete: Cascade)
+    clubUsername  String?   @unique
+    Account       Account[]
+    Session       Session[]
+}
+
+model Student {
+    prn          String         @id
+    srn          String
+    name         String
+    phone        String?
+    email        String?
+    program      String
+    branch       String
+    semester     String
+    section      String
+    campus       String
+    cycle        String
+    user         User?          @relation(name: "StudentToUser")
+    Registration Registration[]
+}
+
+model Admin {
+    username String @id
+    password String
+    name     String
+    user     User?  @relation(name: "AdminToUser")
+}
+
+model Club {
+    username String  @id
+    password String
+    name     String
+    campus   Campus
+    events   Event[] @relation(name: "ClubToEvent")
+    user     User?   @relation(name: "ClubToUser")
+}
+
+model Event {
+    id             String         @id @default(cuid())
+    name           String
+    description    String
+    imageURL       String
+    type           String
+    date           String
+    participation  RegType
+    maxTeamMembers Int
+    password       String
+    createdAt      DateTime       @default(now())
+    updatedAt      DateTime       @updatedAt
+    public         Boolean        @default(false)
+    registrations  Registration[] @relation("EventToReg")
+    createdBy      Club           @relation(name: "ClubToEvent", fields: [creatorID], references: [username], onDelete: Cascade)
+    creatorID      String
+}
+
+model Registration {
+    id             String    @id @default(cuid())
+    event          Event     @relation("EventToReg", fields: [eventId], references: [id], onDelete: Cascade)
+    eventId        String
+    regType        RegType
+    teamName       String?
+    maxTeamMembers Int
+    ownerID        String?
+    students       Student[]
+    present        Boolean?
+}
+
+enum UserRole {
+    STUDENT
+    ADMIN
+    CLUB
+}
+
+enum RegType {
+    SOLO
+    TEAM
+}
+
+enum Campus {
+    RR
+    EC
 }

@@ -1,51 +1,64 @@
-import { Moment } from "moment";
+import { Moment } from 'moment';
 
-export type Role = "student" | "admin" | "club";
+export type Role = 'student' | 'admin' | 'club';
 
 export type StudentInfo = {
-    prn: string;
-    srn: string;
-    name: string;
-    phone?: string;
-    email?: string;
-    program: string;
-    branch: string;
-    semester: number;
-    section: string;
-    campus: string;
-    cycle: string;
+  prn: string;
+  srn: string;
+  name: string;
+  phone?: string;
+  email?: string;
+  program: string;
+  branch: string;
+  semester: number;
+  section: string;
+  campus: string;
+  cycle: string;
 };
 
 export type ClubInfo = {
-    username: string;
-    name: string;
-    campus: "RR" | "EC";
+  username: string;
+  name: string;
+  campus: 'RR' | 'EC';
+  avatar: string;
+  password?: string;
+  links?: SocialLink[];
+};
+
+export type SocialLink = {
+  linkID?: string;
+  clubID: string;
+  type: string;
+  label: string;
+  link: string;
 };
 
 export type AdminInfo = {
-    username: string;
-    name: string;
+  username: string;
+  name: string;
 };
 
 export type Event = {
-    id?: string;
-    name: string;
-    description: string;
-    imageURL: string;
-    type: string;
-    date: string;
-    creatorID: string;
-    public: boolean;
-    registrations?: Registration[];
-    participation: "SOLO" | "TEAM";
-    maxTeamMembers: number;
-    password: string;
+  id?: string;
+  name: string;
+  description: string;
+  imageURL: string;
+  type: string;
+  date: string;
+  creatorID: string;
+  public: boolean;
+  registrations?: Registration[];
+  participation: 'SOLO' | 'TEAM';
+  maxTeamMembers: number;
+  password: string;
 };
 
 export type Registration = {
-    id: string;
-    eventID: string;
-    regType: "SOLO" | "TEAM";
-    teamName?: string;
-    students: any[];
-}
+  id: string;
+  eventID: string;
+  regType: 'SOLO' | 'TEAM';
+  teamName: string | null;
+  maxTeamMembers: number;
+  ownerID: string | null;
+  students: any[];
+};

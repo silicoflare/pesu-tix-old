@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Navbar from "~/pages/ui/Navbar";
-import { montserrat } from '~/fonts';
+import { font } from '~/fonts';
 import { Card, CardHeader, CardTitle, CardContent } from '~/components/ui/card';
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -38,11 +38,13 @@ export default function EventsPage() {
     );
 
     useEffect(() => {
+        setEvents([]);
         if (clubEvents) {
             setEvents(
                 clubEvents.map((x) => ({
                     id: x.id,
                     name: x.name,
+                    password: x.password,
                     type: x.type as Event['type'],
                     description: x.description,
                     date: x.date,
@@ -60,6 +62,7 @@ export default function EventsPage() {
                 publicEvents.map((x) => ({
                     id: x.id,
                     name: x.name,
+                    password: x.password,
                     type: x.type as Event['type'],
                     description: x.description,
                     date: x.date,
@@ -87,7 +90,7 @@ export default function EventsPage() {
                     <title>Events by {session?.user.clubInfo?.name}</title>
                 </Head>
             </Authed>
-            <div className={`flex flex-col items-center w-screen h-screen bg-background text-primary ${montserrat}`}>
+            <div className={`flex flex-col items-center w-screen h-screen bg-background text-primary ${font}`}>
                 <Navbar />
                 <div className="w-full flex flex-col items-center mt-5">
                     <Authed roles={["club", "admin"]}>
@@ -108,9 +111,6 @@ export default function EventsPage() {
                                                 <CardTitle className="text-xl">{event.name}</CardTitle>
                                                 <div className="flex items-center justify-between w-full">
                                                     <Badge>{event.type}</Badge>
-                                                    <Authed roles={["student"]}>
-                                                        {event.registrations?.some(x => x?.prn == session?.user.id) ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : <CheckCircle2 className="w-5 h-5 text-accent" />}
-                                                    </Authed>
                                                     <Authed roles={["club", "admin"]}>
                                                         {event.public ? <EyeIcon className="w-6 h-6" /> : <EyeOffIcon className="w-6 h-6" />}
                                                     </Authed>

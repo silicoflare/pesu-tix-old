@@ -1,7 +1,7 @@
-import { Inter, Montserrat } from 'next/font/google';
+import { Inter, Montserrat, Space_Grotesk } from 'next/font/google';
 
-const intr = Inter({ subsets: ['latin'] });
-const mont = Montserrat({ subsets: [ 'latin' ] });
+const inter = Inter({ subsets: ['latin'] });
+const montserrat = Montserrat({ subsets: [ 'latin' ] });
+const space = Space_Grotesk({ subsets: [ 'latin' ] });
 
-export const inter = intr.className;
-export const montserrat = mont.className;
+export const font = space.className;

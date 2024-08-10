@@ -80,12 +80,23 @@ model Admin {
 }
 
 model Club {
-    username String  @id
+    username String       @id
     password String
     name     String
     campus   Campus
-    events   Event[] @relation(name: "ClubToEvent")
-    user     User?   @relation(name: "ClubToUser")
+    avatar   String
+    events   Event[]      @relation(name: "ClubToEvent")
+    links    SocialLink[] @relation(name: "ClubToSocialLink")
+    user     User?        @relation(name: "ClubToUser")
+}
+
+model SocialLink {
+    linkID String @id @default(cuid())
+    club   Club   @relation(name: "ClubToSocialLink", fields: [clubID], references: [username], onDelete: Cascade)
+    clubID String
+    type   String
+    label  String
+    link   String
 }
 
 model Event {
@@ -108,14 +119,14 @@ model Event {
 
 model Registration {
     id             String    @id @default(cuid())
-    event          Event     @relation("EventToReg", fields: [eventId], references: [id], onDelete: Cascade)
-    eventId        String
+    event          Event     @relation("EventToReg", fields: [eventID], references: [id], onDelete: Cascade)
+    eventID        String
     regType        RegType
     teamName       String?
     maxTeamMembers Int
     ownerID        String?
     students       Student[]
-    present        Boolean?
+    status         Int
 }
 
 enum UserRole {

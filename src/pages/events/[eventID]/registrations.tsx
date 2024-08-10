@@ -1,6 +1,6 @@
 import { useRouter } from "next/router";
 import { Table, TableHeader, TableRow, TableHead, TableCell, TableBody } from "~/components/ui/table";
-import { montserrat } from "~/fonts";
+import { font } from "~/fonts";
 import Navbar from "~/pages/ui/Navbar";
 import { api, server_api } from "~/utils/api";
 import { useEffect, useState } from "react";
@@ -127,7 +127,7 @@ export default function Registrations() {
     }
 
     return (
-        <div className={`window ${montserrat}`}>
+        <div className={`window ${font}`}>
             <Head>
                 <title>Registrations for {eventData?.name} - PESU-tix</title>
             </Head>

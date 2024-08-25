@@ -87,13 +87,10 @@ export const authOptions: NextAuthOptions = {
         adminInfo: token?.adminInfo,
       },
     }),
-    async redirect(props) {
-      const { baseUrl } = props;
-      let { url } = props;
-      const cleanedUpUrl = new URL(url);
-      cleanedUpUrl.searchParams.delete('callbackUrl');
-      url = cleanedUpUrl.toString();
+    redirect({ url, baseUrl }) {
+      // Allows relative callback URLs
       if (url.startsWith('/')) return `${baseUrl}${url}`;
+      // Allows callback URLs on the same origin
       else if (new URL(url).origin === baseUrl) return url;
       return baseUrl;
     },

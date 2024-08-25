@@ -50,6 +50,7 @@ export default function ViewEvent() {
   const delRef = useRef(null);
   const editRef = useRef(null);
   const credRef = useRef(null);
+  const pubRef = useRef(null);
 
   if (router.isReady) {
     ID = eventID as string;
@@ -354,11 +355,11 @@ export default function ViewEvent() {
                   content={
                     isPublic ? 'Make event private' : 'Make event public'
                   }
-                  reference={editRef}
+                  reference={pubRef}
                 />
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline">
+                    <Button variant="outline" ref={pubRef}>
                       {isPublic ? (
                         <Eye className="w-5 h-5" />
                       ) : (
@@ -399,16 +400,19 @@ export default function ViewEvent() {
           </span>
           <div className="w-1/3 my-3 mt-5 flex items-center justify-between">
             {formData.participation === 'SOLO' ? (
-              <Button variant="outline">
-                <User />
+              <Button
+                variant="outline"
+                className="cursor-default hover:bg-background flex items-center gap-x-2"
+              >
+                <User size={20} />
                 Solo
               </Button>
             ) : (
               <Button
                 variant="outline"
-                className="cursor-default hover:bg-background flex items-center gap-x-3"
+                className="cursor-default hover:bg-background flex items-center gap-x-2"
               >
-                <Users />
+                <Users size={20} />
                 Teams of {formData.maxTeamMembers}
               </Button>
             )}

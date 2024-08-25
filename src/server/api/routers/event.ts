@@ -83,6 +83,7 @@ export const eventRouter = createTRPCRouter({
           participation: input.event.participation,
           maxTeamMembers: input.event.maxTeamMembers,
           password: input.event.password,
+          extraQuestions: input.event.extraQuestions || null,
         },
         select: { id: true },
       });

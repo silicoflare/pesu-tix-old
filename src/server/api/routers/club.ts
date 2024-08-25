@@ -1,5 +1,6 @@
+import { Prisma } from '@prisma/client';
 import { z } from 'zod';
-import { ZodClub } from '~/schema.zod';
+import { ZodClub, ZodJSON } from '~/schema.zod';
 
 import {
   createTRPCRouter,
@@ -36,6 +37,7 @@ export const clubRouter = createTRPCRouter({
         campus: input.campus as 'RR' | 'EC',
         password: input.password ?? '',
         avatar: input.avatar,
+        links: [],
       },
     });
   }),
@@ -60,6 +62,17 @@ export const clubRouter = createTRPCRouter({
         },
       });
     }),
+
+  updateLinks: protectedProcedure.input(ZodJSON).mutation(({ ctx, input }) => {
+    return ctx.db.club.update({
+      where: {
+        username: ctx.session.user.id,
+      },
+      data: {
+        links: input,
+      },
+    });
+  }),
 
   delete: protectedProcedure
     .input(z.object({ username: z.string() }))

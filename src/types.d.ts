@@ -1,3 +1,4 @@
+import { JsonValue } from '@prisma/client/runtime/library';
 import { Moment } from 'moment';
 
 export type Role = 'student' | 'admin' | 'club';
@@ -22,15 +23,7 @@ export type ClubInfo = {
   campus: 'RR' | 'EC';
   avatar: string;
   password?: string;
-  links?: SocialLink[];
-};
-
-export type SocialLink = {
-  linkID?: string;
-  clubID: string;
-  type: string;
-  label: string;
-  link: string;
+  links?: JsonValue;
 };
 
 export type AdminInfo = {
@@ -47,6 +40,7 @@ export type Event = {
   date: string;
   creatorID: string;
   public: boolean;
+  extraQuestions: JsonValue;
   registrations?: Registration[];
   participation: 'SOLO' | 'TEAM';
   maxTeamMembers: number;

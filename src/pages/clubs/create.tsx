@@ -71,6 +71,14 @@ export default function CreateClub() {
     const pass = generatePassword(10);
 
     const file = await nhost.storage.upload({ file: values.avatar });
+
+    console.log(file);
+
+    if (!file) {
+      toast({ description: 'Error uploading file' });
+      return;
+    }
+
     const clubData: ClubInfo = {
       name: values.name,
       username: values.username,

@@ -1,7 +1,14 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/router';
-import { useEffect, useRef, useState } from 'react';
+import {
+  Dispatch,
+  ReactNode,
+  SetStateAction,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { font } from '~/fonts';
 import Navbar from '~/pages/ui/Navbar';
 import { ClubInfo } from '~/types';
@@ -11,8 +18,11 @@ import { Button } from '~/components/ui/button';
 import {
   ChevronLeft,
   KeyRoundIcon,
+  LinkIcon,
   Pencil,
   PencilIcon,
+  PlusIcon,
+  Trash2Icon,
   TrashIcon,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -29,6 +39,7 @@ import {
   Dialog,
   DialogClose,
   DialogContent,
+  DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from '~/components/ui/dialog';
@@ -52,16 +63,32 @@ import {
 import { useToast } from '~/components/ui/use-toast';
 import { sha256 } from 'js-sha256';
 import { PopoverClose } from '@radix-ui/react-popover';
+import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
+import { useAtom } from 'jotai';
+import { dark } from '~/atoms';
+import IconPicker from '~/pages/ui/IconPicker';
+import { useSession } from 'next-auth/react';
+
+type ClubLink = {
+  label: string;
+  link: string;
+  icon: string;
+};
 
 export default function ClubData() {
   const router = useRouter();
   const { clubID } = router.query;
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { data: session } = useSession();
+
+  const [links, setLinks] = useState<ClubLink[]>([]);
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
 
   const resetPassword = api.club.resetPassword.useMutation();
   const clubDelete = api.club.delete.useMutation();
   const nameChange = api.club.changeName.useMutation();
+  const linksChange = api.club.updateLinks.useMutation();
 
   const delClubRef = useRef(null);
   const [delName, setDelName] = useState<string>('');
@@ -84,7 +111,8 @@ export default function ClubData() {
   useEffect(() => {
     async function getAvatarURL() {
       if (clubData) {
-        const url = await nhost.storage.getPublicUrl({
+        setLinks(clubData.links as ClubLink[]);
+        const url = nhost.storage.getPublicUrl({
           fileId: clubData.avatar,
         });
         setAvatarURL(url);
@@ -152,7 +180,7 @@ export default function ClubData() {
     toast({
       description: 'Club deleted successfully!',
     });
-    queryClient.invalidateQueries();
+    queryClient.refetchQueries();
     router.push('/clubs');
   }
 
@@ -268,39 +296,41 @@ export default function ClubData() {
             </Authed>
             <h1 className="text-3xl font-bold flex items-start gap-2">
               {clubData.name}
-              <Popover>
-                <PopoverTrigger>
-                  <Pencil size={12} />
-                </PopoverTrigger>
-                <PopoverContent>
-                  <h1 className="text-lg w-full text-center font-bold">
-                    Change Club Name
-                  </h1>
-                  <Form {...changeNameForm}>
-                    <FormField
-                      control={changeNameForm.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>New Name</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <div className="w-full flex items-center">
-                      <Button
-                        onClick={changeNameForm.handleSubmit(changeName)}
-                        className="my-2 w-full"
-                      >
-                        Submit
-                      </Button>
-                    </div>
-                  </Form>
-                </PopoverContent>
-              </Popover>
+              <Authed roles={['club', 'admin']}>
+                <Popover>
+                  <PopoverTrigger>
+                    <Pencil size={12} />
+                  </PopoverTrigger>
+                  <PopoverContent>
+                    <h1 className="text-lg w-full text-center font-bold">
+                      Change Club Name
+                    </h1>
+                    <Form {...changeNameForm}>
+                      <FormField
+                        control={changeNameForm.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>New Name</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <div className="w-full flex items-center">
+                        <Button
+                          onClick={changeNameForm.handleSubmit(changeName)}
+                          className="my-2 w-full"
+                        >
+                          Submit
+                        </Button>
+                      </div>
+                    </Form>
+                  </PopoverContent>
+                </Popover>
+              </Authed>
             </h1>
             <span className="text-light">@{clubData.username}</span>
             <img
@@ -309,7 +339,7 @@ export default function ClubData() {
               className="w-52 h-52 mt-10"
             />
             <Authed roles={['club']}>
-              <div className="flex items-center justify-end my-10">
+              <div className="flex flex-col items-center justify-end my-10 gap-2">
                 <Popover>
                   <PopoverTrigger>
                     <Button
@@ -359,11 +389,175 @@ export default function ClubData() {
                     </Form>
                   </PopoverContent>
                 </Popover>
+                <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
+                  <DialogTrigger className="w-full">
+                    <Button
+                      variant="outline"
+                      className="flex items-center gap-2 w-full"
+                      ref={passwordRef}
+                    >
+                      <LinkIcon size={20} />
+                      Social Links
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Social Links</DialogTitle>
+                    </DialogHeader>
+                    <div className="w-full flex flex-col items-center gap-2">
+                      {links.map(({ label, link, icon }, i) => (
+                        <div className="w-full flex items-center gap-3" key={i}>
+                          <div className="flex flex-col items-start w-full gap-2">
+                            <div className="flex items-center w-full gap-2">
+                              <IconPicker
+                                icon={icon}
+                                onIconChange={(ico) =>
+                                  setLinks((old) => {
+                                    const temp = Array.from(old);
+                                    temp[i].icon = ico;
+                                    return temp;
+                                  })
+                                }
+                              />
+                              <Input
+                                value={label}
+                                onChange={(e) =>
+                                  setLinks((old) => {
+                                    const temp = Array.from(old);
+                                    temp[i].label = e.target.value;
+                                    return temp;
+                                  })
+                                }
+                              />
+                            </div>
+                            <Input
+                              value={link}
+                              onChange={(e) =>
+                                setLinks((old) => {
+                                  const temp = Array.from(old);
+                                  temp[i].link = e.target.value;
+                                  return temp;
+                                })
+                              }
+                            />
+                          </div>
+                          <Trash2Icon
+                            size={30}
+                            className="text-red-600 cursor-pointer"
+                            onClick={(_) =>
+                              setLinks((old) => {
+                                const temp = Array.from(old);
+                                temp.splice(i, 1);
+                                return temp;
+                              })
+                            }
+                          />
+                        </div>
+                      ))}
+                      <div className="grid grid-cols-2 gap-3 w-full">
+                        <Button
+                          variant="outline"
+                          className="w-full flex items-center gap-2"
+                          onClick={(_) =>
+                            setLinks((old) => [
+                              ...old,
+                              { label: '', link: '', icon: '' },
+                            ])
+                          }
+                        >
+                          <PlusIcon size={20} />
+                          Add Link
+                        </Button>
+                        <Button
+                          className="w-full flex items-center gap-2"
+                          onClick={(_) => {
+                            if (
+                              !links.every(
+                                (x) => x.label !== '' || x.link !== '',
+                              )
+                            ) {
+                              toast({
+                                description: 'Links or labels cannot be empty',
+                                variant: 'destructive',
+                              });
+                              return;
+                            }
+                            linksChange.mutate(links);
+                            toast({
+                              description: 'Links updated successfully!',
+                              variant: 'success',
+                            });
+                            setLinkDialogOpen(false);
+                          }}
+                        >
+                          Submit
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
             </Authed>
+            {((session && session.user.role !== 'club') || !session) && (
+              <div className="w-1/4 flex flex-col items-center gap-2 mt-10">
+                {(clubData.links as ClubLink[]).map(({ icon, link, label }) => (
+                  <Link
+                    href={link}
+                    target="_blank"
+                    className="w-full flex items-center gap-3 justify-center p-2 text-xl border border-foreground rounded-md transition duration-200 hover:bg-accent hover:border-accent"
+                  >
+                    <IconPicker
+                      icon={icon}
+                      onIconChange={(s) => null}
+                      disabled
+                    />
+                    {label}
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
     </>
+  );
+}
+
+function SocialImage({ link }: { link: string }) {
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [isDark] = useAtom(dark);
+
+  useEffect(() => {
+    const img = new Image();
+
+    try {
+      const hostName = new URL(link).host.split('.').reverse()[1];
+      img.src = `https://cdn.simpleicons.org/${hostName}/${isDark ? 'white' : 'black'}?viewbox=auto`;
+    } catch (error) {
+      // Use a fallback value if the URL is invalid
+      img.src = `https://cdn.simpleicons.org/link/${isDark ? 'white' : 'black'}?viewbox=auto`;
+    }
+
+    img.onload = () => {
+      setImageLoaded(true);
+    };
+    img.onerror = () => {
+      setImageLoaded(false);
+    };
+  }, [link, isDark]);
+
+  return (
+    <div>
+      {imageLoaded && new URL(link) ? (
+        <img
+          width={20}
+          height={20}
+          src={`https://cdn.simpleicons.org/${new URL(link).host.split('.').reverse()[1]}/black/white?viewbox=auto`}
+          alt="social image"
+        />
+      ) : (
+        <LinkIcon size={20} />
+      )}
+    </div>
   );
 }

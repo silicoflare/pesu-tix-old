@@ -1,4 +1,16 @@
 import { z } from 'zod';
+import { JsonValue } from '@prisma/client/runtime/library';
+
+export const ZodJSON = z
+  .union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.null(),
+    z.array(z.any()),
+    z.object({}).passthrough(),
+  ])
+  .optional();
 
 export const ZodStudent = z.object({
   prn: z.string(),
@@ -30,19 +42,12 @@ export const ZodEvent = {
   imageURL: z.string(),
   type: z.string(),
   public: z.boolean(),
+  extraQuestions: ZodJSON,
   participation: z.enum(['SOLO', 'TEAM']),
   maxTeamMembers: z.number(),
   registrations: z.array(ZodRegistration).optional(),
   password: z.string(),
 };
-
-export const ZodSocialLink = z.object({
-  linkID: z.string().optional(),
-  clubID: z.string(),
-  type: z.string(),
-  label: z.string(),
-  link: z.string(),
-});
 
 export const ZodClub = z.object({
   username: z.string(),
@@ -50,5 +55,5 @@ export const ZodClub = z.object({
   password: z.string().optional(),
   campus: z.string(),
   avatar: z.string(),
-  links: z.array(ZodSocialLink).optional(),
+  links: ZodJSON,
 });

@@ -86,17 +86,8 @@ model Club {
     campus   Campus
     avatar   String
     events   Event[]      @relation(name: "ClubToEvent")
-    links    SocialLink[] @relation(name: "ClubToSocialLink")
+    links    Json?
     user     User?        @relation(name: "ClubToUser")
-}
-
-model SocialLink {
-    linkID String @id @default(cuid())
-    club   Club   @relation(name: "ClubToSocialLink", fields: [clubID], references: [username], onDelete: Cascade)
-    clubID String
-    type   String
-    label  String
-    link   String
 }
 
 model Event {
@@ -112,6 +103,7 @@ model Event {
     createdAt      DateTime       @default(now())
     updatedAt      DateTime       @updatedAt
     public         Boolean        @default(false)
+    extraQuestions Json?
     registrations  Registration[] @relation("EventToReg")
     createdBy      Club           @relation(name: "ClubToEvent", fields: [creatorID], references: [username], onDelete: Cascade)
     creatorID      String

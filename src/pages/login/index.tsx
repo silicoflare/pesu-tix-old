@@ -27,6 +27,7 @@ import { font } from '~/fonts';
 import { sha256 } from 'js-sha256';
 import { useAtom } from 'jotai';
 import { clubID } from '~/atoms';
+import Head from 'next/head';
 
 const SignInPage: FunctionComponent = () => {
   const [error, setError] = useState<null | string>(null);
@@ -82,7 +83,7 @@ const SignInPage: FunctionComponent = () => {
       setLoading(false);
 
       if (res!.ok) {
-        if (session?.user.role == 'admin') {
+        if (session?.user.role === 'admin') {
           router.push('/clubs');
         } else {
           setClubId(values.username);
@@ -99,66 +100,71 @@ const SignInPage: FunctionComponent = () => {
   };
 
   return (
-    <div className={`container justify-center ${font}`}>
-      <Navbar hidelogin />
-      <Card>
-        <CardHeader>
-          <CardTitle>Member Login</CardTitle>
-          <CardDescription>
-            Log in using your PESU Academy or club credentials
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="mt-5">
-          <Form {...form}>
-            <FormField
-              control={form.control}
-              name="username"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Username</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+    <>
+      <Head>
+        <title>Login - PESU-tix</title>
+      </Head>
+      <div className={`container justify-center ${font}`}>
+        <Navbar hidelogin />
+        <Card>
+          <CardHeader>
+            <CardTitle>Member Login</CardTitle>
+            <CardDescription>
+              Log in using your PESU Academy or club credentials
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="mt-5">
+            <Form {...form}>
+              <FormField
+                control={form.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Username</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <br />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <br />
+              {error && (
+                <div className="text-red-500 p-2 text-sm w-full text-center">
+                  {error}
+                </div>
               )}
-            />
-            <br />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <Input type="password" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <br />
-            {error && (
-              <div className="text-red-500 p-2 text-sm w-full text-center">
-                {error}
-              </div>
-            )}
-            <Button
-              type="submit"
-              className="w-full flex gap-x-3"
-              onClick={form.handleSubmit(handleSubmit)}
-              disabled={loading}
-            >
-              {loading ? (
-                <LoaderCircle className="animate-spin text-primary-foreground" />
-              ) : (
-                'Submit'
-              )}
-            </Button>
-          </Form>
-        </CardContent>
-      </Card>
-    </div>
+              <Button
+                type="submit"
+                className="w-full flex gap-x-3"
+                onClick={form.handleSubmit(handleSubmit)}
+                disabled={loading}
+              >
+                {loading ? (
+                  <LoaderCircle className="animate-spin text-primary-foreground" />
+                ) : (
+                  'Submit'
+                )}
+              </Button>
+            </Form>
+          </CardContent>
+        </Card>
+      </div>
+    </>
   );
 };
 

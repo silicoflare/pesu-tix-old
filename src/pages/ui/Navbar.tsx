@@ -26,11 +26,9 @@ export default function Navbar({ hidelogin = false }: { hidelogin?: boolean }) {
   useEffect(() => {
     async function getAvatarURL() {
       if (session && session?.user.role === 'club' && session.user.clubInfo) {
-        console.log(session.user.clubInfo);
         const url = await nhost.storage.getPublicUrl({
           fileId: session.user.clubInfo?.avatar || '',
         });
-        console.log(url);
         setAvatarURL(url);
       }
     }
@@ -48,6 +46,17 @@ export default function Navbar({ hidelogin = false }: { hidelogin?: boolean }) {
         </Link>
       </h1>
       <span className="flex flex-row items-center justify-end cursor-pointer gap-x-3">
+        {!!session?.user ? (
+          session.user.role === 'club' ? (
+            <div className="flex items-center gap-2 mx-10">
+              <Link href={'/events'}>Events</Link>
+            </div>
+          ) : session.user.role === 'admin' ? (
+            <div className="flex items-center gap-2 mx-10">
+              <Link href={'/clubs'}>Clubs</Link>
+            </div>
+          ) : null
+        ) : null}
         <ThemeButton />
         {!hidelogin &&
           (!!session?.user ? (
@@ -68,7 +77,7 @@ export default function Navbar({ hidelogin = false }: { hidelogin?: boolean }) {
               <DropdownMenuContent className="mr-5 mt-2">
                 <DropdownMenuLabel className="font-semibold text-lg">
                   {session.user.role === 'student'
-                    ? namify(session.user.studentInfo?.name || '')
+                    ? namify(session.user.studentInfo?.name ?? '')
                     : session.user.clubInfo?.name ||
                       session.user.adminInfo?.name}
                 </DropdownMenuLabel>
@@ -85,7 +94,16 @@ export default function Navbar({ hidelogin = false }: { hidelogin?: boolean }) {
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  onClick={() => signOut()}
+                  onClick={async () =>
+                    router.push(
+                      (
+                        await signOut({
+                          redirect: false,
+                          callbackUrl: '/login',
+                        })
+                      ).url,
+                    )
+                  }
                   className="text-red-600"
                 >
                   Logout

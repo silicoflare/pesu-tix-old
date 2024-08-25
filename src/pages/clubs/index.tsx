@@ -61,6 +61,7 @@ export default function ClubsPage() {
                       <Card
                         className="transition hover:scale-105 duration-300 ease-in-out hover:bg-accent cursor-pointer"
                         onClick={(_) => router.push(`/clubs/${club.username}`)}
+                        key={club.username}
                       >
                         <CardContent className="flex flex-row items-center gap-x-7 pt-5">
                           <Avatar className="w-24 h-24 p-0">
@@ -86,7 +87,7 @@ export default function ClubsPage() {
                 </div>
               ) : (
                 <div className="w-full">
-                  <h1 className="w-full text-center text-gray-600 text-5xl">
+                  <h1 className="w-full text-center text-gray-600 text-2xl">
                     No clubs yet
                   </h1>
                 </div>
@@ -100,3 +101,7 @@ export default function ClubsPage() {
     </>
   );
 }
+
+ClubsPage.auth = {
+  role: ['admin'],
+};

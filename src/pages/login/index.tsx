@@ -83,12 +83,7 @@ const SignInPage: FunctionComponent = () => {
       setLoading(false);
 
       if (res!.ok) {
-        if (session?.user.role === 'admin') {
-          router.push('/clubs');
-        } else {
-          setClubId(values.username);
-          router.push('/events');
-        }
+        router.push('/redirect');
       } else {
         if (res?.status === 401) {
           setError('Invalid username or password');

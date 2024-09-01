@@ -269,7 +269,9 @@ export default function ViewEvent() {
           <span className="w-1/3 flex flex-row items-center justify-between mt-32">
             <Link
               className="text-sm flex items-center hover:underline"
-              href="/events"
+              href={
+                session ? (session.user.role === 'club' ? '/events' : '/') : '/'
+              }
             >
               <ChevronLeft className="w-5 h-5" /> Back
             </Link>

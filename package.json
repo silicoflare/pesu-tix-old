@@ -69,6 +69,7 @@
     "react-hook-form": "^7.51.3",
     "simple-icons": "^13.6.0",
     "superjson": "^1.13.1",
+    "swr": "^2.2.5",
     "tailwind-merge": "^2.2.2",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.22.4"

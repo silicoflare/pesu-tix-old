@@ -164,7 +164,7 @@ export default function ClubData() {
 
   async function changeName(data: z.infer<typeof changeNameFormSchema>) {
     toast({ description: 'Changing club name...' });
-    await nameChange.mutate({
+    nameChange.mutate({
       username: clubData!.username,
       newName: data.name,
     });
@@ -176,7 +176,7 @@ export default function ClubData() {
   }
 
   async function deleteClub() {
-    await clubDelete.mutate({ username: clubData!.username });
+    clubDelete.mutate({ username: clubData!.username });
     toast({
       description: 'Club deleted successfully!',
     });
@@ -296,7 +296,10 @@ export default function ClubData() {
             </Authed>
             <h1 className="text-3xl font-bold flex items-start gap-2">
               {clubData.name}
-              <Authed roles={['club', 'admin']}>
+              <Authed
+                roles={['club', 'admin']}
+                match={[clubID as string, /.*/]}
+              >
                 <Popover>
                   <PopoverTrigger>
                     <Pencil size={12} />
@@ -338,7 +341,7 @@ export default function ClubData() {
               alt="club logo"
               className="w-52 h-52 mt-10"
             />
-            <Authed roles={['club']}>
+            <Authed roles={['club']} match={[clubID as string]}>
               <div className="flex flex-col items-center justify-end my-10 gap-2">
                 <Popover>
                   <PopoverTrigger>
@@ -498,24 +501,18 @@ export default function ClubData() {
                 </Dialog>
               </div>
             </Authed>
-            {((session && session.user.role !== 'club') || !session) && (
-              <div className="w-1/4 flex flex-col items-center gap-2 mt-10">
-                {(clubData.links as ClubLink[]).map(({ icon, link, label }) => (
-                  <Link
-                    href={link}
-                    target="_blank"
-                    className="w-full flex items-center gap-3 justify-center p-2 text-xl border border-foreground rounded-md transition duration-200 hover:bg-accent hover:border-accent"
-                  >
-                    <IconPicker
-                      icon={icon}
-                      onIconChange={(s) => null}
-                      disabled
-                    />
-                    {label}
-                  </Link>
-                ))}
-              </div>
-            )}
+            <div className="w-1/4 flex flex-col items-center gap-2 mt-10">
+              {(clubData.links as ClubLink[]).map(({ icon, link, label }) => (
+                <Link
+                  href={link}
+                  target="_blank"
+                  className="w-full flex items-center gap-3 justify-center p-2 text-xl border border-foreground rounded-md transition duration-200 hover:bg-accent hover:border-accent"
+                >
+                  <IconPicker icon={icon} onIconChange={(s) => null} disabled />
+                  {label}
+                </Link>
+              ))}
+            </div>
           </div>
         )}
       </div>

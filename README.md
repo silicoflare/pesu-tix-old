@@ -1,3 +1,5 @@
+> This repository is now archived. Work has started on the new version of PESU-tix under Nexus
+
 # Pesu-tix
 
 All-in-one Ticketing system for all PESU events
